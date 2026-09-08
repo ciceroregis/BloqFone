@@ -53,6 +53,22 @@
 
     <string name="focus_mode_status_enabled">Status: ativo</string>
     <string name="focus_mode_status_disabled">Status: desativado</string>
+    <string name="free_version_title">Versão Gratuita</string>
+    <string name="premium_version_title">Versão Premium ativa</string>
+    <string name="free_version_description">Use a versão gratuita para o essencial do dia a dia e desbloqueie proteção avançada com a assinatura Premium.</string>
+    <string name="premium_version_description">Você desbloqueou proteção avançada, incluindo foco rigoroso, DDI/DDD, robocalls, telemarketing e correio de voz.</string>
+    <string name="premium_cta">Ativar Premium</string>
+    <string name="premium_recommended_title">Premium recomendado</string>
+    <string name="premium_recommended_description">Para desbloquear foco rigoroso, bloqueio por DDI/DDD, telemarketing, robocalls, spam e correio de voz, ative a versão Premium.</string>
+    <string name="premium_locked_focus">Disponível na versão Premium. Protege sua rotina bloqueando quem não é contato.</string>
+    <string name="premium_locked_international">Disponível na versão Premium. Bloqueia ligações internacionais automaticamente.</string>
+    <string name="premium_locked_country">Disponível na versão Premium. Bloqueie DDI/país específicos para filtrar ligações indesejadas.</string>
+    <string name="premium_locked_ddd">Disponível na versão Premium. Bloqueie DDDs específicos para evitar ligações de outros estados.</string>
+    <string name="premium_locked_telemarketing">Disponível na versão Premium. Repele campanhas e ligações comerciais não solicitadas.</string>
+    <string name="premium_locked_robocalls">Disponível na versão Premium. Detecta robocalls por padrão e bloqueia automaticamente.</string>
+    <string name="premium_locked_spam">Disponível na versão Premium. Bloqueia números com padrão de spam, golpe e fraude.</string>
+    <string name="premium_locked_silent">Disponível na versão Premium. Silencia ligações bloqueadas sem notificação imediata.</string>
+    <string name="premium_locked_voicemail">Disponível na versão Premium. Encaminha automaticamente para o correio de voz.</string>
     <string name="info_tip">Dica: use lista branca para nunca perder ligações importantes e lista negra para bloquear reincidentes.</string>
 
     <string name="toast_role_granted">Permissão concedida! O bloqueio está ativo.</string>

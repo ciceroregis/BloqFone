@@ -10,6 +10,7 @@ class ConfigRepository(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences("bloqfone_prefs", Context.MODE_PRIVATE)
 
     companion object {
+        private const val KEY_PREMIUM_USER = "is_premium_user"
         private const val KEY_FOCUS_MODE = "focus_mode"
         private const val KEY_BLOCK_UNKNOWN = "block_unknown_numbers"
         private const val KEY_BLOCK_PRIVATE = "block_private_numbers"
@@ -26,6 +27,10 @@ class ConfigRepository(context: Context) {
         private const val KEY_BLOCKED_COUNTRIES = "blocked_country_codes"
         private const val KEY_BLOCKED_DDDS = "blocked_ddds"
     }
+
+    var isPremiumUser: Boolean
+        get() = prefs.getBoolean(KEY_PREMIUM_USER, false)
+        set(value) = prefs.edit { putBoolean(KEY_PREMIUM_USER, value) }
 
     private fun getSet(key: String): Set<String> = prefs.getStringSet(key, emptySet())?.toSet() ?: emptySet()
     private fun putSet(key: String, value: Set<String>) = prefs.edit { putStringSet(key, value) }

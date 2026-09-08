@@ -7,8 +7,14 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import br.com.bloqfone.data.ConfigRepository
+import br.com.bloqfone.features.AppFeature
+import br.com.bloqfone.features.FeatureAccessPolicy
+import br.com.bloqfone.features.SubscriptionTier
 
 class MainViewModel(private val configRepository: ConfigRepository) : ViewModel() {
+
+    var isPremiumUser by mutableStateOf(configRepository.isPremiumUser)
+        private set
 
     var isFocusModeOn by mutableStateOf(configRepository.isFocusModeEnabled)
         private set
@@ -44,7 +50,17 @@ class MainViewModel(private val configRepository: ConfigRepository) : ViewModel(
     var blockedDdds by mutableStateOf(configRepository.getBlockedDdds().toList().sorted())
         private set
 
+    fun canUseFeature(feature: AppFeature): Boolean {
+        return FeatureAccessPolicy.isUnlocked(feature, if (isPremiumUser) SubscriptionTier.PREMIUM else SubscriptionTier.FREE)
+    }
+
+    fun activatePremium(enabled: Boolean) {
+        isPremiumUser = enabled
+        configRepository.isPremiumUser = enabled
+    }
+
     fun toggleFocusMode(enabled: Boolean) {
+        if (enabled && !canUseFeature(AppFeature.MODE_FOCUS)) return
         isFocusModeOn = enabled
         configRepository.isFocusModeEnabled = enabled
     }
@@ -65,31 +81,37 @@ class MainViewModel(private val configRepository: ConfigRepository) : ViewModel(
     }
 
     fun toggleBlockInternationalNumbers(enabled: Boolean) {
+        if (enabled && !canUseFeature(AppFeature.BLOCK_INTERNATIONAL)) return
         blockInternationalNumbers = enabled
         configRepository.shouldBlockInternationalNumbers = enabled
     }
 
     fun toggleBlockTelemarketing(enabled: Boolean) {
+        if (enabled && !canUseFeature(AppFeature.BLOCK_TELEMARKETING)) return
         blockTelemarketing = enabled
         configRepository.shouldBlockTelemarketing = enabled
     }
 
     fun toggleBlockRobocalls(enabled: Boolean) {
+        if (enabled && !canUseFeature(AppFeature.BLOCK_ROBOCALLS)) return
         blockRobocalls = enabled
         configRepository.shouldBlockRobocalls = enabled
     }
 
     fun toggleBlockSpam(enabled: Boolean) {
+        if (enabled && !canUseFeature(AppFeature.BLOCK_SPAM)) return
         blockSpam = enabled
         configRepository.shouldBlockSpam = enabled
     }
 
     fun toggleSilentBlocking(enabled: Boolean) {
+        if (enabled && !canUseFeature(AppFeature.SILENT_BLOCKING)) return
         silentBlocking = enabled
         configRepository.isSilentBlockingEnabled = enabled
     }
 
     fun toggleSendToVoicemail(enabled: Boolean) {
+        if (enabled && !canUseFeature(AppFeature.SEND_TO_VOICEMAIL)) return
         sendToVoicemail = enabled
         configRepository.shouldSendToVoicemail = enabled
         if (enabled) {
@@ -134,6 +156,7 @@ class MainViewModel(private val configRepository: ConfigRepository) : ViewModel(
     }
 
     fun addBlockedCountryCode(code: String): Boolean {
+        if (!canUseFeature(AppFeature.BLOCK_COUNTRY)) return false
         val wasAdded = configRepository.addBlockedCountryCode(code)
         if (wasAdded) {
             blockedCountryCodes = configRepository.getBlockedCountryCodes().toList().sorted()
@@ -142,11 +165,13 @@ class MainViewModel(private val configRepository: ConfigRepository) : ViewModel(
     }
 
     fun removeBlockedCountryCode(code: String) {
+        if (!canUseFeature(AppFeature.BLOCK_COUNTRY)) return
         configRepository.removeBlockedCountryCode(code)
         blockedCountryCodes = configRepository.getBlockedCountryCodes().toList().sorted()
     }
 
     fun addBlockedDdd(ddd: String): Boolean {
+        if (!canUseFeature(AppFeature.BLOCK_DDD)) return false
         val wasAdded = configRepository.addBlockedDdd(ddd)
         if (wasAdded) {
             blockedDdds = configRepository.getBlockedDdds().toList().sorted()
@@ -155,6 +180,7 @@ class MainViewModel(private val configRepository: ConfigRepository) : ViewModel(
     }
 
     fun removeBlockedDdd(ddd: String) {
+        if (!canUseFeature(AppFeature.BLOCK_DDD)) return
         configRepository.removeBlockedDdd(ddd)
         blockedDdds = configRepository.getBlockedDdds().toList().sorted()
     }

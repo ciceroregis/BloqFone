@@ -29,6 +29,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import br.com.bloqfone.features.AppFeature
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -109,6 +110,34 @@ fun AppScreen(viewModel: MainViewModel, onRequestRole: () -> Unit) {
                 }
             }
 
+            Card(
+                colors = CardDefaults.cardColors(containerColor = if (viewModel.isPremiumUser) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.tertiaryContainer)
+            ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = if (viewModel.isPremiumUser) stringResource(id = R.string.premium_version_title) else stringResource(id = R.string.free_version_title),
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Text(
+                        text = if (viewModel.isPremiumUser) {
+                            stringResource(id = R.string.premium_version_description)
+                        } else {
+                            stringResource(id = R.string.free_version_description)
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    if (!viewModel.isPremiumUser) {
+                        Button(
+                            onClick = { viewModel.activatePremium(true) },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(text = stringResource(id = R.string.premium_cta))
+                        }
+                    }
+                }
+            }
+
             ElevatedCard {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(text = stringResource(id = R.string.rules_card_title), style = MaterialTheme.typography.titleMedium)
@@ -119,9 +148,18 @@ fun AppScreen(viewModel: MainViewModel, onRequestRole: () -> Unit) {
                     )
                     SettingSwitchRow(
                         title = stringResource(id = R.string.focus_mode_title),
-                        description = stringResource(id = R.string.focus_mode_description),
+                        description = if (viewModel.canUseFeature(AppFeature.MODE_FOCUS)) {
+                            stringResource(id = R.string.focus_mode_description)
+                        } else {
+                            stringResource(id = R.string.premium_locked_focus)
+                        },
+                        enabled = viewModel.canUseFeature(AppFeature.MODE_FOCUS),
                         checked = viewModel.isFocusModeOn
                     ) { checked ->
+                        if (!viewModel.canUseFeature(AppFeature.MODE_FOCUS)) {
+                            viewModel.activatePremium(true)
+                            return@SettingSwitchRow
+                        }
                         if (checked) {
                             val hasPermission = ContextCompat.checkSelfPermission(
                                 context,
@@ -156,27 +194,71 @@ fun AppScreen(viewModel: MainViewModel, onRequestRole: () -> Unit) {
                     )
                     SettingSwitchRow(
                         title = stringResource(id = R.string.block_international_title),
-                        description = stringResource(id = R.string.block_international_description),
+                        description = if (viewModel.canUseFeature(AppFeature.BLOCK_INTERNATIONAL)) {
+                            stringResource(id = R.string.block_international_description)
+                        } else {
+                            stringResource(id = R.string.premium_locked_international)
+                        },
+                        enabled = viewModel.canUseFeature(AppFeature.BLOCK_INTERNATIONAL),
                         checked = viewModel.blockInternationalNumbers,
-                        onCheckedChange = viewModel::toggleBlockInternationalNumbers
+                        onCheckedChange = { enabled ->
+                            if (!viewModel.canUseFeature(AppFeature.BLOCK_INTERNATIONAL)) {
+                                viewModel.activatePremium(true)
+                                return@SettingSwitchRow
+                            }
+                            viewModel.toggleBlockInternationalNumbers(enabled)
+                        }
                     )
                     SettingSwitchRow(
                         title = stringResource(id = R.string.block_telemarketing_title),
-                        description = stringResource(id = R.string.block_telemarketing_description),
+                        description = if (viewModel.canUseFeature(AppFeature.BLOCK_TELEMARKETING)) {
+                            stringResource(id = R.string.block_telemarketing_description)
+                        } else {
+                            stringResource(id = R.string.premium_locked_telemarketing)
+                        },
+                        enabled = viewModel.canUseFeature(AppFeature.BLOCK_TELEMARKETING),
                         checked = viewModel.blockTelemarketing,
-                        onCheckedChange = viewModel::toggleBlockTelemarketing
+                        onCheckedChange = { enabled ->
+                            if (!viewModel.canUseFeature(AppFeature.BLOCK_TELEMARKETING)) {
+                                viewModel.activatePremium(true)
+                                return@SettingSwitchRow
+                            }
+                            viewModel.toggleBlockTelemarketing(enabled)
+                        }
                     )
                     SettingSwitchRow(
                         title = stringResource(id = R.string.block_robocalls_title),
-                        description = stringResource(id = R.string.block_robocalls_description),
+                        description = if (viewModel.canUseFeature(AppFeature.BLOCK_ROBOCALLS)) {
+                            stringResource(id = R.string.block_robocalls_description)
+                        } else {
+                            stringResource(id = R.string.premium_locked_robocalls)
+                        },
+                        enabled = viewModel.canUseFeature(AppFeature.BLOCK_ROBOCALLS),
                         checked = viewModel.blockRobocalls,
-                        onCheckedChange = viewModel::toggleBlockRobocalls
+                        onCheckedChange = { enabled ->
+                            if (!viewModel.canUseFeature(AppFeature.BLOCK_ROBOCALLS)) {
+                                viewModel.activatePremium(true)
+                                return@SettingSwitchRow
+                            }
+                            viewModel.toggleBlockRobocalls(enabled)
+                        }
                     )
                     SettingSwitchRow(
                         title = stringResource(id = R.string.block_spam_title),
-                        description = stringResource(id = R.string.block_spam_description),
+                        description = if (viewModel.canUseFeature(AppFeature.BLOCK_SPAM)) {
+                            stringResource(id = R.string.block_spam_description)
+                        } else {
+                            stringResource(id = R.string.premium_locked_spam)
+                        },
+                        enabled = viewModel.canUseFeature(AppFeature.BLOCK_SPAM),
                         checked = viewModel.blockSpam,
-                        onCheckedChange = viewModel::toggleBlockSpam
+                        onCheckedChange = { enabled ->
+                            if (!viewModel.canUseFeature(AppFeature.BLOCK_SPAM)) {
+                                viewModel.activatePremium(true)
+                                return@SettingSwitchRow
+                            }
+                            viewModel.toggleBlockSpam(enabled)
+                        }
                     )
                 }
             }
@@ -191,15 +273,37 @@ fun AppScreen(viewModel: MainViewModel, onRequestRole: () -> Unit) {
                     )
                     SettingSwitchRow(
                         title = stringResource(id = R.string.silent_block_title),
-                        description = stringResource(id = R.string.silent_block_description),
+                        description = if (viewModel.canUseFeature(AppFeature.SILENT_BLOCKING)) {
+                            stringResource(id = R.string.silent_block_description)
+                        } else {
+                            stringResource(id = R.string.premium_locked_silent)
+                        },
+                        enabled = viewModel.canUseFeature(AppFeature.SILENT_BLOCKING),
                         checked = viewModel.silentBlocking,
-                        onCheckedChange = viewModel::toggleSilentBlocking
+                        onCheckedChange = { enabled ->
+                            if (!viewModel.canUseFeature(AppFeature.SILENT_BLOCKING)) {
+                                viewModel.activatePremium(true)
+                                return@SettingSwitchRow
+                            }
+                            viewModel.toggleSilentBlocking(enabled)
+                        }
                     )
                     SettingSwitchRow(
                         title = stringResource(id = R.string.send_voicemail_title),
-                        description = stringResource(id = R.string.send_voicemail_description),
+                        description = if (viewModel.canUseFeature(AppFeature.SEND_TO_VOICEMAIL)) {
+                            stringResource(id = R.string.send_voicemail_description)
+                        } else {
+                            stringResource(id = R.string.premium_locked_voicemail)
+                        },
+                        enabled = viewModel.canUseFeature(AppFeature.SEND_TO_VOICEMAIL),
                         checked = viewModel.sendToVoicemail,
-                        onCheckedChange = viewModel::toggleSendToVoicemail
+                        onCheckedChange = { enabled ->
+                            if (!viewModel.canUseFeature(AppFeature.SEND_TO_VOICEMAIL)) {
+                                viewModel.activatePremium(true)
+                                return@SettingSwitchRow
+                            }
+                            viewModel.toggleSendToVoicemail(enabled)
+                        }
                     )
                     SettingSwitchRow(
                         title = stringResource(id = R.string.auto_reject_title),
@@ -227,6 +331,21 @@ fun AppScreen(viewModel: MainViewModel, onRequestRole: () -> Unit) {
                 onRemove = viewModel::removeBlacklistNumber
             )
 
+            if (!viewModel.isPremiumUser) {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(text = stringResource(id = R.string.premium_recommended_title), style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            text = stringResource(id = R.string.premium_recommended_description),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
             EditableListCard(
                 title = stringResource(id = R.string.whitelist_title),
                 description = stringResource(id = R.string.whitelist_description),
@@ -246,36 +365,60 @@ fun AppScreen(viewModel: MainViewModel, onRequestRole: () -> Unit) {
 
             EditableListCard(
                 title = stringResource(id = R.string.country_block_title),
-                description = stringResource(id = R.string.country_block_description),
+                description = if (viewModel.canUseFeature(AppFeature.BLOCK_COUNTRY)) {
+                    stringResource(id = R.string.country_block_description)
+                } else {
+                    stringResource(id = R.string.premium_locked_country)
+                },
                 inputValue = countryCodeInput,
                 inputLabel = stringResource(id = R.string.country_block_input_label),
                 onInputChange = { countryCodeInput = it },
                 onAdd = {
+                    if (!viewModel.canUseFeature(AppFeature.BLOCK_COUNTRY)) {
+                        viewModel.activatePremium(true)
+                        return@EditableListCard
+                    }
                     if (viewModel.addBlockedCountryCode(countryCodeInput)) {
                         countryCodeInput = ""
                     } else {
                         Toast.makeText(context, invalidCountryCodeText, Toast.LENGTH_SHORT).show()
                     }
                 },
-                items = viewModel.blockedCountryCodes,
-                onRemove = viewModel::removeBlockedCountryCode
+                items = if (viewModel.canUseFeature(AppFeature.BLOCK_COUNTRY)) viewModel.blockedCountryCodes else emptyList(),
+                onRemove = { code ->
+                    if (viewModel.canUseFeature(AppFeature.BLOCK_COUNTRY)) {
+                        viewModel.removeBlockedCountryCode(code)
+                    }
+                }
             )
 
             EditableListCard(
                 title = stringResource(id = R.string.ddd_block_title),
-                description = stringResource(id = R.string.ddd_block_description),
+                description = if (viewModel.canUseFeature(AppFeature.BLOCK_DDD)) {
+                    stringResource(id = R.string.ddd_block_description)
+                } else {
+                    stringResource(id = R.string.premium_locked_ddd)
+                },
                 inputValue = dddInput,
                 inputLabel = stringResource(id = R.string.ddd_block_input_label),
                 onInputChange = { dddInput = it },
                 onAdd = {
+                    if (!viewModel.canUseFeature(AppFeature.BLOCK_DDD)) {
+                        viewModel.activatePremium(true)
+                        return@EditableListCard
+                    }
                     if (viewModel.addBlockedDdd(dddInput)) {
                         dddInput = ""
                     } else {
                         Toast.makeText(context, invalidDddText, Toast.LENGTH_SHORT).show()
                     }
                 },
-                items = viewModel.blockedDdds,
-                onRemove = viewModel::removeBlockedDdd
+                items = if (viewModel.canUseFeature(AppFeature.BLOCK_DDD)) viewModel.blockedDdds else emptyList(),
+                onRemove = { ddd ->
+                    if (viewModel.canUseFeature(AppFeature.BLOCK_DDD)) {
+                        viewModel.removeBlockedDdd(ddd)
+                    }
+                }
             )
 
             val statusText = if (viewModel.isFocusModeOn) {
@@ -310,6 +453,7 @@ private fun SettingSwitchRow(
     title: String,
     description: String,
     checked: Boolean,
+    enabled: Boolean = true,
     onCheckedChange: (Boolean) -> Unit
 ) {
     Row(
@@ -324,7 +468,7 @@ private fun SettingSwitchRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
+        Switch(checked = checked, enabled = enabled, onCheckedChange = onCheckedChange)
     }
     HorizontalDivider(modifier = Modifier.padding(top = 4.dp))
 }
