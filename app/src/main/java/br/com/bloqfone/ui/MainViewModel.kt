@@ -184,6 +184,9 @@ class MainViewModel(private val configRepository: ConfigRepository) : ViewModel(
         configRepository.removeBlockedDdd(ddd)
         blockedDdds = configRepository.getBlockedDdds().toList().sorted()
     }
+
+    fun blocklistCount(): Int = blacklistNumbers.size
+    fun whitelistCount(): Int = whitelistNumbers.size
 }
 
 class MainViewModelFactory(private val context: Context) : ViewModelProvider.Factory {
