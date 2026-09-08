@@ -1,3 +1,20 @@
 <resources>
     <string name="app_name">BloqFone</string>
+    <string name="home_title">Bloqueio de chamadas simplificado</string>
+    <string name="home_subtitle">Configure em poucos passos e reduza interrupções durante seu dia.</string>
+
+    <string name="role_card_title">Ativar proteção principal</string>
+    <string name="role_card_description">Defina o BloqFone como app padrão de bloqueio para filtrar chamadas automaticamente.</string>
+    <string name="role_button_label">Definir como app de bloqueio</string>
+
+    <string name="focus_mode_title">Modo foco rigoroso</string>
+    <string name="focus_mode_description">Bloqueia números que não estão salvos nos seus contatos.</string>
+    <string name="focus_mode_status_enabled">Status: ativo</string>
+    <string name="focus_mode_status_disabled">Status: desativado</string>
+    <string name="info_tip">Dica: ative o modo foco em períodos de trabalho para receber somente ligações conhecidas.</string>
+
+    <string name="toast_role_granted">Permissão concedida! O bloqueio está ativo.</string>
+    <string name="toast_role_denied">Permissão negada. O app não vai bloquear chamadas.</string>
+    <string name="toast_role_already_set">O app já está definido como bloqueador padrão.</string>
+    <string name="toast_contacts_permission_needed">A permissão de contatos é necessária para o modo foco.</string>
 </resources>
