@@ -9,8 +9,146 @@ class ConfigRepository(context: Context) {
     // Creates a local SharedPreferences file to save the user's settings
     private val prefs: SharedPreferences = context.getSharedPreferences("bloqfone_prefs", Context.MODE_PRIVATE)
 
-    // Property to get and set the Focus Mode state
+    companion object {
+        private const val KEY_FOCUS_MODE = "focus_mode"
+        private const val KEY_BLOCK_UNKNOWN = "block_unknown_numbers"
+        private const val KEY_BLOCK_PRIVATE = "block_private_numbers"
+        private const val KEY_BLOCK_NO_CALLER_ID = "block_no_caller_id"
+        private const val KEY_BLOCK_INTERNATIONAL = "block_international_numbers"
+        private const val KEY_BLOCK_TELEMARKETING = "block_telemarketing"
+        private const val KEY_BLOCK_ROBOCALLS = "block_robocalls"
+        private const val KEY_BLOCK_SPAM = "block_spam"
+        private const val KEY_SILENT_BLOCKING = "silent_blocking"
+        private const val KEY_SEND_TO_VOICEMAIL = "send_to_voicemail"
+        private const val KEY_AUTO_REJECT = "auto_reject"
+        private const val KEY_BLACKLIST = "blacklist_numbers"
+        private const val KEY_WHITELIST = "whitelist_numbers"
+        private const val KEY_BLOCKED_COUNTRIES = "blocked_country_codes"
+        private const val KEY_BLOCKED_DDDS = "blocked_ddds"
+    }
+
+    private fun getSet(key: String): Set<String> = prefs.getStringSet(key, emptySet())?.toSet() ?: emptySet()
+    private fun putSet(key: String, value: Set<String>) = prefs.edit { putStringSet(key, value) }
+
+    private fun sanitizePhone(input: String): String {
+        val trimmed = input.trim()
+        if (trimmed.isEmpty()) return ""
+        val normalized = if (trimmed.startsWith("+")) {
+            "+${trimmed.drop(1).filter { it.isDigit() }}"
+        } else {
+            trimmed.filter { it.isDigit() }
+        }
+        return if (normalized == "+") "" else normalized
+    }
+
+    private fun sanitizeDigits(input: String): String = input.filter { it.isDigit() }
+
     var isFocusModeEnabled: Boolean
-        get() = prefs.getBoolean("focus_mode", false)
-        set(value) = prefs.edit { putBoolean("focus_mode", value) }
+        get() = prefs.getBoolean(KEY_FOCUS_MODE, false)
+        set(value) = prefs.edit { putBoolean(KEY_FOCUS_MODE, value) }
+
+    var shouldBlockUnknownNumbers: Boolean
+        get() = prefs.getBoolean(KEY_BLOCK_UNKNOWN, true)
+        set(value) = prefs.edit { putBoolean(KEY_BLOCK_UNKNOWN, value) }
+
+    var shouldBlockPrivateNumbers: Boolean
+        get() = prefs.getBoolean(KEY_BLOCK_PRIVATE, true)
+        set(value) = prefs.edit { putBoolean(KEY_BLOCK_PRIVATE, value) }
+
+    var shouldBlockNoCallerId: Boolean
+        get() = prefs.getBoolean(KEY_BLOCK_NO_CALLER_ID, true)
+        set(value) = prefs.edit { putBoolean(KEY_BLOCK_NO_CALLER_ID, value) }
+
+    var shouldBlockInternationalNumbers: Boolean
+        get() = prefs.getBoolean(KEY_BLOCK_INTERNATIONAL, false)
+        set(value) = prefs.edit { putBoolean(KEY_BLOCK_INTERNATIONAL, value) }
+
+    var shouldBlockTelemarketing: Boolean
+        get() = prefs.getBoolean(KEY_BLOCK_TELEMARKETING, true)
+        set(value) = prefs.edit { putBoolean(KEY_BLOCK_TELEMARKETING, value) }
+
+    var shouldBlockRobocalls: Boolean
+        get() = prefs.getBoolean(KEY_BLOCK_ROBOCALLS, true)
+        set(value) = prefs.edit { putBoolean(KEY_BLOCK_ROBOCALLS, value) }
+
+    var shouldBlockSpam: Boolean
+        get() = prefs.getBoolean(KEY_BLOCK_SPAM, true)
+        set(value) = prefs.edit { putBoolean(KEY_BLOCK_SPAM, value) }
+
+    var isSilentBlockingEnabled: Boolean
+        get() = prefs.getBoolean(KEY_SILENT_BLOCKING, true)
+        set(value) = prefs.edit { putBoolean(KEY_SILENT_BLOCKING, value) }
+
+    var shouldSendToVoicemail: Boolean
+        get() = prefs.getBoolean(KEY_SEND_TO_VOICEMAIL, false)
+        set(value) = prefs.edit { putBoolean(KEY_SEND_TO_VOICEMAIL, value) }
+
+    var shouldAutoReject: Boolean
+        get() = prefs.getBoolean(KEY_AUTO_REJECT, true)
+        set(value) = prefs.edit { putBoolean(KEY_AUTO_REJECT, value) }
+
+    fun getBlacklistNumbers(): Set<String> = getSet(KEY_BLACKLIST)
+    fun getWhitelistNumbers(): Set<String> = getSet(KEY_WHITELIST)
+    fun getBlockedCountryCodes(): Set<String> = getSet(KEY_BLOCKED_COUNTRIES)
+    fun getBlockedDdds(): Set<String> = getSet(KEY_BLOCKED_DDDS)
+
+    fun addToBlacklist(number: String): Boolean {
+        val normalized = sanitizePhone(number)
+        if (normalized.isEmpty()) return false
+        val updated = getBlacklistNumbers().toMutableSet().apply { add(normalized) }
+        putSet(KEY_BLACKLIST, updated)
+        return true
+    }
+
+    fun removeFromBlacklist(number: String) {
+        val normalized = sanitizePhone(number)
+        if (normalized.isEmpty()) return
+        val updated = getBlacklistNumbers().toMutableSet().apply { remove(normalized) }
+        putSet(KEY_BLACKLIST, updated)
+    }
+
+    fun addToWhitelist(number: String): Boolean {
+        val normalized = sanitizePhone(number)
+        if (normalized.isEmpty()) return false
+        val updated = getWhitelistNumbers().toMutableSet().apply { add(normalized) }
+        putSet(KEY_WHITELIST, updated)
+        return true
+    }
+
+    fun removeFromWhitelist(number: String) {
+        val normalized = sanitizePhone(number)
+        if (normalized.isEmpty()) return
+        val updated = getWhitelistNumbers().toMutableSet().apply { remove(normalized) }
+        putSet(KEY_WHITELIST, updated)
+    }
+
+    fun addBlockedCountryCode(code: String): Boolean {
+        val normalized = sanitizeDigits(code)
+        if (normalized.length !in 1..3) return false
+        val updated = getBlockedCountryCodes().toMutableSet().apply { add(normalized) }
+        putSet(KEY_BLOCKED_COUNTRIES, updated)
+        return true
+    }
+
+    fun removeBlockedCountryCode(code: String) {
+        val normalized = sanitizeDigits(code)
+        if (normalized.isEmpty()) return
+        val updated = getBlockedCountryCodes().toMutableSet().apply { remove(normalized) }
+        putSet(KEY_BLOCKED_COUNTRIES, updated)
+    }
+
+    fun addBlockedDdd(ddd: String): Boolean {
+        val normalized = sanitizeDigits(ddd)
+        if (normalized.length != 2) return false
+        val updated = getBlockedDdds().toMutableSet().apply { add(normalized) }
+        putSet(KEY_BLOCKED_DDDS, updated)
+        return true
+    }
+
+    fun removeBlockedDdd(ddd: String) {
+        val normalized = sanitizeDigits(ddd)
+        if (normalized.isEmpty()) return
+        val updated = getBlockedDdds().toMutableSet().apply { remove(normalized) }
+        putSet(KEY_BLOCKED_DDDS, updated)
+    }
 }
