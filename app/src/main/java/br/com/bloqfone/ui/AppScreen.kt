@@ -750,6 +750,17 @@ private fun HomeScreen(
                 }
             }
         }
+
+        // Version Footer
+        Text(
+            text = "BloqFone v1.1.0 • Proteção 100% Local e Offline",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 4.dp, bottom = 12.dp),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
     }
 }
 
