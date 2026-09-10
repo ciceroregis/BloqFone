@@ -1,7 +1,11 @@
 package br.com.bloqfone
 
+import android.Manifest
 import android.app.role.RoleManager
 import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -12,6 +16,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import androidx.core.content.ContextCompat
+import br.com.bloqfone.services.NotificationHelper
 import br.com.bloqfone.ui.AppScreen
 import br.com.bloqfone.ui.MainViewModel
 import br.com.bloqfone.ui.MainViewModelFactory
@@ -25,6 +31,16 @@ class MainActivity : ComponentActivity() {
 
     private val viewModel: MainViewModel by viewModels {
         MainViewModelFactory(applicationContext)
+    }
+
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            Log.i(TAG, "[SUCESSO] Permissão POST_NOTIFICATIONS concedida pelo usuário.")
+        } else {
+            Log.w(TAG, "[AVISO] Permissão POST_NOTIFICATIONS negada pelo usuário.")
+        }
     }
 
     private val roleRequestLauncher = registerForActivityResult(
@@ -50,6 +66,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.i(TAG, "[SUCESSO] MainActivity inicializada com sucesso.")
+        NotificationHelper.createNotificationChannel(this)
+        checkAndRequestNotificationPermission()
+        handleNotificationIntent(intent)
+
         setContent {
             BloqFoneTheme {
                 Surface(
@@ -65,13 +85,34 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleNotificationIntent(intent)
+    }
+
+    private fun handleNotificationIntent(intent: Intent?) {
+        if (intent?.getStringExtra("EXTRA_NAVIGATE_TO") == "report") {
+            viewModel.selectNavTab(3)
+        }
+    }
+
+    private fun checkAndRequestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val status = ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+            if (status != PackageManager.PERMISSION_GRANTED) {
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         try {
             val roleManager = getSystemService(Context.ROLE_SERVICE) as RoleManager
             val isHeld = roleManager.isRoleHeld(RoleManager.ROLE_CALL_SCREENING)
             viewModel.updateRoleStatus(isHeld)
-            viewModel.refreshBlockedCalls()
+            viewModel.refreshSettings()
             Log.d(TAG, "[RASTREAMENTO] MainActivity retomada. Status da Role ROLE_CALL_SCREENING: isHeld=$isHeld.")
         } catch (e: Exception) {
             Log.e(TAG, "[ERRO] Falha ao consultar status da ROLE_CALL_SCREENING em onResume.", e)

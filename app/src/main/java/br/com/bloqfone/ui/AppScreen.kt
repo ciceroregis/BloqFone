@@ -130,7 +130,6 @@ fun AppScreen(
     viewModel: MainViewModel,
     onRequestRole: () -> Unit
 ) {
-    var selectedNavIndex by remember { mutableIntStateOf(0) }
     var showStatusInfoDialog by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -180,19 +179,19 @@ fun AppScreen(
                 tonalElevation = 8.dp
             ) {
                 NavigationBarItem(
-                    selected = selectedNavIndex == 0,
-                    onClick = { selectedNavIndex = 0 },
+                    selected = viewModel.selectedNavIndex == 0,
+                    onClick = { viewModel.selectNavTab(0) },
                     icon = {
                         Icon(
-                            imageVector = if (selectedNavIndex == 0) Icons.Filled.Shield else Icons.Outlined.Home,
+                            imageVector = if (viewModel.selectedNavIndex == 0) Icons.Filled.Shield else Icons.Outlined.Home,
                             contentDescription = stringResource(id = R.string.nav_home)
                         )
                     },
                     label = { Text(stringResource(id = R.string.nav_home)) }
                 )
                 NavigationBarItem(
-                    selected = selectedNavIndex == 1,
-                    onClick = { selectedNavIndex = 1 },
+                    selected = viewModel.selectedNavIndex == 1,
+                    onClick = { viewModel.selectNavTab(1) },
                     icon = {
                         Icon(
                             imageVector = Icons.Outlined.Shield,
@@ -202,8 +201,8 @@ fun AppScreen(
                     label = { Text(stringResource(id = R.string.nav_rules)) }
                 )
                 NavigationBarItem(
-                    selected = selectedNavIndex == 2,
-                    onClick = { selectedNavIndex = 2 },
+                    selected = viewModel.selectedNavIndex == 2,
+                    onClick = { viewModel.selectNavTab(2) },
                     icon = {
                         Icon(
                             imageVector = Icons.AutoMirrored.Outlined.FormatListBulleted,
@@ -213,11 +212,11 @@ fun AppScreen(
                     label = { Text(stringResource(id = R.string.nav_lists)) }
                 )
                 NavigationBarItem(
-                    selected = selectedNavIndex == 3,
-                    onClick = { selectedNavIndex = 3 },
+                    selected = viewModel.selectedNavIndex == 3,
+                    onClick = { viewModel.selectNavTab(3) },
                     icon = {
                         Icon(
-                            imageVector = if (selectedNavIndex == 3) Icons.Filled.History else Icons.Outlined.History,
+                            imageVector = if (viewModel.selectedNavIndex == 3) Icons.Filled.History else Icons.Outlined.History,
                             contentDescription = stringResource(id = R.string.nav_report)
                         )
                     },
@@ -232,11 +231,11 @@ fun AppScreen(
                 .padding(innerPadding)
         ) {
             // Screen Content
-            when (selectedNavIndex) {
+            when (viewModel.selectedNavIndex) {
                 0 -> HomeScreen(
                     viewModel = viewModel,
                     onRequestRole = onRequestRole,
-                    onNavigateToReport = { selectedNavIndex = 3 }
+                    onNavigateToReport = { viewModel.selectNavTab(3) }
                 )
                 1 -> RulesScreen(
                     viewModel = viewModel
@@ -505,10 +504,6 @@ private fun HomeScreen(
     onRequestRole: () -> Unit,
     onNavigateToReport: () -> Unit
 ) {
-    var testNumberInput by remember { mutableStateOf("") }
-    var simulatePrivateCall by remember { mutableStateOf(false) }
-    var simulationResult by remember { mutableStateOf<MainViewModel.CallSimulationResult?>(null) }
-    val focusManager = LocalFocusManager.current
     val isDark = isSystemInDarkTheme()
 
     Column(
@@ -554,76 +549,57 @@ private fun HomeScreen(
             }
         }
 
-        // Protection Status Card with High-Contrast Colors
-        val statusContainerColor = if (viewModel.isCallScreeningRoleHeld) {
-            if (isDark) SuccessContainerDark else SuccessContainerLight
-        } else {
-            if (isDark) WarningContainerDark else WarningContainerLight
-        }
-        val statusTextColor = if (viewModel.isCallScreeningRoleHeld) {
-            if (isDark) OnSuccessContainerDark else OnSuccessContainerLight
-        } else {
-            if (isDark) OnWarningContainerDark else OnWarningContainerLight
-        }
+        // Card de alerta exibido apenas se a proteção ainda não foi ativada pelo usuário.
+        // Quando a proteção já está ativa, o card com a mensagem "Proteção Ativa" foi removido.
+        if (!viewModel.isCallScreeningRoleHeld) {
+            val statusContainerColor = if (isDark) WarningContainerDark else WarningContainerLight
+            val statusTextColor = if (isDark) OnWarningContainerDark else OnWarningContainerLight
 
-        ElevatedCard(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.elevatedCardColors(
-                containerColor = statusContainerColor
-            )
-        ) {
-            Column(
-                modifier = Modifier.padding(18.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.elevatedCardColors(
+                    containerColor = statusContainerColor
+                )
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                Column(
+                    modifier = Modifier.padding(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = statusTextColor.copy(alpha = 0.15f),
-                        modifier = Modifier.size(44.dp)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = if (viewModel.isCallScreeningRoleHeld) {
-                                    Icons.Filled.CheckCircle
-                                } else {
-                                    Icons.Filled.Warning
-                                },
-                                contentDescription = null,
-                                tint = statusTextColor,
-                                modifier = Modifier.size(28.dp)
+                        Surface(
+                            shape = CircleShape,
+                            color = statusTextColor.copy(alpha = 0.15f),
+                            modifier = Modifier.size(44.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Filled.Warning,
+                                    contentDescription = null,
+                                    tint = statusTextColor,
+                                    modifier = Modifier.size(28.dp)
+                                )
+                            }
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(id = R.string.role_inactive_title),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = statusTextColor
+                            )
+                            Text(
+                                text = stringResource(id = R.string.role_inactive_subtitle),
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Medium,
+                                color = statusTextColor.copy(alpha = 0.9f)
                             )
                         }
                     }
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = if (viewModel.isCallScreeningRoleHeld) {
-                                stringResource(id = R.string.role_active_title)
-                            } else {
-                                stringResource(id = R.string.role_inactive_title)
-                            },
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = statusTextColor
-                        )
-                        Text(
-                            text = if (viewModel.isCallScreeningRoleHeld) {
-                                stringResource(id = R.string.role_active_subtitle)
-                            } else {
-                                stringResource(id = R.string.role_inactive_subtitle)
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.Medium,
-                            color = statusTextColor.copy(alpha = 0.9f)
-                        )
-                    }
-                }
 
-                if (!viewModel.isCallScreeningRoleHeld) {
                     Button(
                         onClick = onRequestRole,
                         modifier = Modifier.fillMaxWidth(),
@@ -642,24 +618,6 @@ private fun HomeScreen(
                             text = stringResource(id = R.string.role_button_activate),
                             fontWeight = FontWeight.Bold,
                             color = Color.White
-                        )
-                    }
-                } else {
-                    OutlinedButton(
-                        onClick = onRequestRole,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.CheckCircle,
-                            contentDescription = null,
-                            tint = statusTextColor,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = stringResource(id = R.string.role_button_active),
-                            color = statusTextColor,
-                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
@@ -757,200 +715,7 @@ private fun HomeScreen(
             }
         }
 
-        // Call Simulator Card
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-        ) {
-            Column(
-                modifier = Modifier.padding(18.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.PlayArrow,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = stringResource(id = R.string.simulator_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
 
-                Text(
-                    text = stringResource(id = R.string.simulator_subtitle),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                OutlinedTextField(
-                    value = testNumberInput,
-                    onValueChange = {
-                        testNumberInput = it
-                        simulationResult = null
-                    },
-                    label = { Text(stringResource(id = R.string.simulator_input_label)) },
-                    placeholder = { Text("(11) 98888-7777") },
-                    leadingIcon = {
-                        Icon(Icons.Filled.Phone, contentDescription = null)
-                    },
-                    trailingIcon = {
-                        if (testNumberInput.isNotEmpty()) {
-                            IconButton(onClick = {
-                                testNumberInput = ""
-                                simulationResult = null
-                            }) {
-                                Icon(Icons.Filled.Clear, contentDescription = "Limpar")
-                            }
-                        }
-                    },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Phone,
-                        imeAction = ImeAction.Done
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onDone = {
-                            focusManager.clearFocus()
-                            simulationResult = viewModel.simulateCall(testNumberInput, simulatePrivateCall)
-                        }
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            simulatePrivateCall = !simulatePrivateCall
-                            simulationResult = null
-                        }
-                        .padding(vertical = 4.dp)
-                ) {
-                    Checkbox(
-                        checked = simulatePrivateCall,
-                        onCheckedChange = {
-                            simulatePrivateCall = it
-                            simulationResult = null
-                        }
-                    )
-                    Text(
-                        text = stringResource(id = R.string.simulator_private_toggle),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-
-                Button(
-                    onClick = {
-                        focusManager.clearFocus()
-                        simulationResult = viewModel.simulateCall(testNumberInput, simulatePrivateCall)
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(stringResource(id = R.string.simulator_button_test), fontWeight = FontWeight.Bold)
-                }
-
-                AnimatedVisibility(visible = simulationResult != null) {
-                    simulationResult?.let { result ->
-                        val simContainerColor = if (result.isBlocked) {
-                            if (isDark) DangerContainerDark else DangerContainerLight
-                        } else {
-                            if (isDark) SuccessContainerDark else SuccessContainerLight
-                        }
-                        val simTextColor = if (result.isBlocked) {
-                            if (isDark) OnDangerContainerDark else OnDangerContainerLight
-                        } else {
-                            if (isDark) OnSuccessContainerDark else OnSuccessContainerLight
-                        }
-                        val simIcon = if (result.isBlocked) Icons.Filled.PhoneDisabled else Icons.Filled.CheckCircle
-
-                        OutlinedCard(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.outlinedCardColors(
-                                containerColor = simContainerColor
-                            ),
-                            border = CardDefaults.outlinedCardBorder().copy(
-                                brush = androidx.compose.ui.graphics.SolidColor(
-                                    if (result.isBlocked) DangerRed else SuccessGreen
-                                )
-                            )
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(14.dp),
-                                verticalAlignment = Alignment.Top,
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                Icon(
-                                    imageVector = simIcon,
-                                    contentDescription = null,
-                                    tint = simTextColor,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    Text(
-                                        text = result.verdictTitle,
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = simTextColor
-                                    )
-                                    Text(
-                                        text = result.verdictReason,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.Medium,
-                                        color = simTextColor
-                                    )
-                                    if (!result.isBlocked && testNumberInput.isNotBlank()) {
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        Button(
-                                            onClick = {
-                                                viewModel.addBlacklistNumber(testNumberInput)
-                                                simulationResult = viewModel.simulateCall(testNumberInput, simulatePrivateCall)
-                                            },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = DangerRed
-                                            )
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Filled.Block,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(16.dp),
-                                                tint = Color.White
-                                            )
-                                            Spacer(modifier = Modifier.width(6.dp))
-                                            Text(
-                                                text = stringResource(id = R.string.simulator_block_this_number),
-                                                style = MaterialTheme.typography.labelMedium,
-                                                fontWeight = FontWeight.Bold,
-                                                color = Color.White
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                Text(
-                    text = stringResource(id = R.string.simulator_tip),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
 
         // Privacy & Offline Badge Card
         Card(
@@ -985,6 +750,17 @@ private fun HomeScreen(
                 }
             }
         }
+
+        // Version Footer
+        Text(
+            text = "BloqFone v1.1.0 • Proteção 100% Local e Offline",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 4.dp, bottom = 12.dp),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
     }
 }
 
@@ -1311,16 +1087,15 @@ private fun ListsScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
-                Row(
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     OutlinedTextField(
                         value = numberInput,
                         onValueChange = { numberInput = it },
-                        label = { Text(stringResource(id = R.string.add_number_label)) },
-                        placeholder = { Text(stringResource(id = R.string.add_number_placeholder)) },
+                        label = { Text(stringResource(id = R.string.add_number_label), maxLines = 1) },
+                        placeholder = { Text(stringResource(id = R.string.add_number_placeholder), maxLines = 1) },
                         leadingIcon = {
                             Icon(Icons.Filled.Phone, contentDescription = null)
                         },
@@ -1352,7 +1127,7 @@ private fun ListsScreen(
                                 }
                             }
                         ),
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.fillMaxWidth()
                     )
 
                     Button(
@@ -1370,11 +1145,20 @@ private fun ListsScreen(
                                 viewModel.showFeedback("Por favor, digite um número de telefone válido.", FeedbackType.WARNING)
                             }
                         },
-                        modifier = Modifier.height(56.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
                     ) {
                         Icon(Icons.Filled.Add, contentDescription = null)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(stringResource(id = R.string.add_button), fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = if (isBlacklistTab) {
+                                stringResource(id = R.string.add_to_blacklist)
+                            } else {
+                                stringResource(id = R.string.add_to_whitelist)
+                            },
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }

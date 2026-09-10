@@ -3,6 +3,7 @@ package br.com.bloqfone.ui
 import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
@@ -10,8 +11,6 @@ import androidx.lifecycle.ViewModelProvider
 import br.com.bloqfone.data.BlockedCallRecord
 import br.com.bloqfone.data.BlockedCallsRepository
 import br.com.bloqfone.data.ConfigRepository
-import br.com.bloqfone.data.HANDLE_PRESENTATION_ALLOWED
-import br.com.bloqfone.data.HANDLE_PRESENTATION_RESTRICTED
 import br.com.bloqfone.data.maskPhoneNumberForLog
 import br.com.bloqfone.data.parsePhoneNumber
 import br.com.bloqfone.features.AppFeature
@@ -29,13 +28,19 @@ class MainViewModel(
         private const val TAG = "BloqFone:MainViewModel"
     }
 
+    var selectedNavIndex by mutableIntStateOf(0)
+
+    fun selectNavTab(index: Int) {
+        selectedNavIndex = index
+    }
+
     var isCallScreeningRoleHeld by mutableStateOf(false)
         private set
 
-    var isPremiumUser by mutableStateOf(false)
+    var isPremiumUser by mutableStateOf(configRepository.isPremiumUser)
         private set
 
-    var isFocusModeOn by mutableStateOf(false)
+    var isFocusModeOn by mutableStateOf(configRepository.isFocusModeEnabled)
         private set
 
     var blockUnknownNumbers by mutableStateOf(configRepository.shouldBlockUnknownNumbers)
@@ -348,75 +353,24 @@ class MainViewModel(
         return count
     }
 
-    data class CallSimulationResult(
-        val isBlocked: Boolean,
-        val verdictTitle: String,
-        val verdictReason: String
-    )
-
-    fun simulateCall(rawNumber: String, isPrivate: Boolean = false): CallSimulationResult {
-        val masked = maskPhoneNumberForLog(rawNumber)
-        Log.d(TAG, "[RASTREAMENTO] Iniciando simulação de chamada: número=$masked, isPrivate=$isPrivate")
-        return try {
-            val presentation = if (isPrivate) {
-                HANDLE_PRESENTATION_RESTRICTED
-            } else {
-                HANDLE_PRESENTATION_ALLOWED
-            }
-            val inputNumber = if (isPrivate && rawNumber.isBlank()) null else rawNumber.trim().ifEmpty { null }
-
-            val snapshot = BlockingSnapshot(
-                isFocusModeEnabled = isFocusModeOn,
-                shouldBlockUnknownNumbers = blockUnknownNumbers,
-                shouldBlockPrivateNumbers = blockPrivateNumbers,
-                shouldBlockNoCallerId = blockNoCallerId,
-                shouldBlockInternationalNumbers = blockInternationalNumbers,
-                shouldBlockTelemarketing = blockTelemarketing,
-                shouldBlockRobocalls = blockRobocalls,
-                shouldBlockSpam = blockSpam,
-                whitelistNumbers = whitelistNumbers.toSet(),
-                blacklistNumbers = blacklistNumbers.toSet(),
-                blockedCountryCodes = blockedCountryCodes.toSet(),
-                blockedDdds = blockedDdds.toSet()
-            )
-
-            val reason = CallBlockEvaluator.evaluateBlockReason(
-                rawIncomingNumber = inputNumber,
-                handlePresentation = presentation,
-                isInContacts = false,
-                snapshot = snapshot
-            )
-
-            val result = if (reason != null) {
-                CallSimulationResult(
-                    isBlocked = true,
-                    verdictTitle = "Chamada Bloqueada",
-                    verdictReason = "Motivo: Identificada como $reason"
-                )
-            } else {
-                val normalized = parsePhoneNumber(inputNumber).normalized
-                val isWhitelisted = normalized.isNotEmpty() && whitelistNumbers.contains(normalized)
-                val explanation = if (isWhitelisted) {
-                    "Motivo: Número liberado pela Lista Branca."
-                } else {
-                    "Motivo: Nenhuma regra de bloqueio ativa coincide com esta chamada."
-                }
-                CallSimulationResult(
-                    isBlocked = false,
-                    verdictTitle = "Chamada Permitida",
-                    verdictReason = explanation
-                )
-            }
-            Log.i(TAG, "[SUCESSO] Simulação finalizada para $masked: bloqueado=${result.isBlocked}, motivo='${result.verdictReason}'")
-            result
-        } catch (e: Exception) {
-            Log.e(TAG, "[ERRO] Falha inesperada durante a simulação de chamada para $masked.", e)
-            CallSimulationResult(
-                isBlocked = false,
-                verdictTitle = "Erro na Simulação",
-                verdictReason = "Ocorreu um erro ao processar a simulação: ${e.localizedMessage ?: "Erro desconhecido"}"
-            )
-        }
+    fun refreshSettings() {
+        isPremiumUser = configRepository.isPremiumUser
+        isFocusModeOn = configRepository.isFocusModeEnabled
+        blockUnknownNumbers = configRepository.shouldBlockUnknownNumbers
+        blockPrivateNumbers = configRepository.shouldBlockPrivateNumbers
+        blockNoCallerId = configRepository.shouldBlockNoCallerId
+        blockInternationalNumbers = configRepository.shouldBlockInternationalNumbers
+        blockTelemarketing = configRepository.shouldBlockTelemarketing
+        blockRobocalls = configRepository.shouldBlockRobocalls
+        blockSpam = configRepository.shouldBlockSpam
+        silentBlocking = configRepository.isSilentBlockingEnabled
+        sendToVoicemail = configRepository.shouldSendToVoicemail
+        autoReject = configRepository.shouldAutoReject
+        blacklistNumbers = configRepository.getBlacklistNumbers().toList().sorted()
+        whitelistNumbers = configRepository.getWhitelistNumbers().toList().sorted()
+        blockedCountryCodes = configRepository.getBlockedCountryCodes().toList().sorted()
+        blockedDdds = configRepository.getBlockedDdds().toList().sorted()
+        blockedCalls = blockedCallsRepository.getBlockedCalls()
     }
 }
 

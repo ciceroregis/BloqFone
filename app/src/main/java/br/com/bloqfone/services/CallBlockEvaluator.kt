@@ -40,18 +40,20 @@ object CallBlockEvaluator {
         if (shouldBlockPrivate(handlePresentation, snapshot)) return "número privado/oculto"
         if (shouldBlockNoCallerId(handlePresentation, number, snapshot)) return "sem identificação"
         if (shouldBlockUnknown(number, snapshot)) return "número desconhecido"
-        if (shouldBlockByFocusMode(isInContacts, snapshot)) return "modo foco"
-        if (shouldBlockInternational(number, snapshot)) return "internacional"
-
-        val countryCodeMatch = blockedCountryCodeMatch(number, snapshot)
-        if (countryCodeMatch != null) return "país bloqueado ($countryCodeMatch)"
-
-        val dddMatch = blockedDddMatch(number, snapshot)
-        if (dddMatch != null) return "DDD bloqueado ($dddMatch)"
 
         if (snapshot.shouldBlockTelemarketing && isBrazilianTelemarketingNumber(number)) return "telemarketing"
         if (snapshot.shouldBlockRobocalls && isLikelyRobocall(number)) return "robocall"
         if (snapshot.shouldBlockSpam && isLikelySpam(number)) return "spam"
+
+        val dddMatch = blockedDddMatch(number, snapshot)
+        if (dddMatch != null) return "DDD bloqueado ($dddMatch)"
+
+        val countryCodeMatch = blockedCountryCodeMatch(number, snapshot)
+        if (countryCodeMatch != null) return "país bloqueado ($countryCodeMatch)"
+
+        if (shouldBlockInternational(number, snapshot)) return "internacional"
+
+        if (shouldBlockByFocusMode(isInContacts, snapshot)) return "modo foco"
         return null
     }
 

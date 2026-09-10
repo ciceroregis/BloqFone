@@ -22,10 +22,11 @@ class CallInterceptorService : CallScreeningService() {
     override fun onCreate() {
         super.onCreate()
         try {
-            // Initialize the repositories when the service is created
+            // Initialize the repositories and notification channel when the service is created
             contactsRepository = ContactsRepository(this)
             configRepository = ConfigRepository(this)
             blockedCallsRepository = BlockedCallsRepository(this)
+            NotificationHelper.createNotificationChannel(this)
             Log.i(TAG, "[SUCESSO] CallInterceptorService criado e repositórios inicializados com sucesso.")
         } catch (e: Exception) {
             Log.e(TAG, "[ERRO] Falha ao inicializar dependências do CallInterceptorService.", e)
@@ -66,6 +67,11 @@ class CallInterceptorService : CallScreeningService() {
                     rawNumber = rawIncomingNumber,
                     reason = blockReason,
                     autoReject = configRepository.shouldAutoReject
+                )
+                NotificationHelper.notifyBlockedCall(
+                    context = this,
+                    rawNumber = rawIncomingNumber,
+                    reason = blockReason
                 )
                 Log.i(
                     TAG,

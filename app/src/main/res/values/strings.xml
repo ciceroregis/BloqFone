@@ -68,6 +68,8 @@
     <string name="add_number_label">Número de telefone</string>
     <string name="add_number_placeholder">Ex: (11) 98765-4321 ou +55...</string>
     <string name="add_button">Adicionar</string>
+    <string name="add_to_blacklist">Adicionar à Lista Negra</string>
+    <string name="add_to_whitelist">Adicionar à Lista Branca</string>
     <string name="remove_button">Remover</string>
     <string name="move_to_whitelist">Mover para Lista Branca</string>
     <string name="move_to_blacklist">Mover para Lista Negra</string>
