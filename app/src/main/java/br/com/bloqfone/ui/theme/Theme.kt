@@ -8,32 +8,39 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = BlockBlue80,
-    onPrimary = BlockBlueContainerDark,
-    primaryContainer = BlockBlueContainerDark,
-    onPrimaryContainer = BlockBlueContainerLight,
-    secondary = BlockTeal80,
-    secondaryContainer = BlockTealContainerDark,
-    onSecondaryContainer = BlockTealContainerLight,
-    tertiary = CalmSlate80,
+    primary = ShieldBlueDark,
+    onPrimary = Color(0xFF0F172A),
+    primaryContainer = ShieldBlueContainerDark,
+    onPrimaryContainer = ShieldBlueContainerLight,
+    secondary = ShieldTealDark,
+    secondaryContainer = ShieldTealContainerDark,
+    onSecondaryContainer = ShieldTealContainerLight,
     background = AppBackgroundDark,
-    surface = AppBackgroundDark
+    onBackground = Color(0xFFF8FAFC),
+    surface = AppSurfaceDark,
+    onSurface = Color(0xFFF8FAFC),
+    surfaceVariant = Color(0xFF1E293B),
+    onSurfaceVariant = Color(0xFFCBD5E1)
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = BlockBlue40,
-    onPrimary = AppBackgroundLight,
-    primaryContainer = BlockBlueContainerLight,
-    onPrimaryContainer = BlockBlueContainerDark,
-    secondary = BlockTeal40,
-    secondaryContainer = BlockTealContainerLight,
-    onSecondaryContainer = BlockTealContainerDark,
-    tertiary = CalmSlate40,
+    primary = ShieldBlueLight,
+    onPrimary = Color.White,
+    primaryContainer = ShieldBlueContainerLight,
+    onPrimaryContainer = ShieldBlueLight,
+    secondary = ShieldTealLight,
+    secondaryContainer = ShieldTealContainerLight,
+    onSecondaryContainer = ShieldTealLight,
     background = AppBackgroundLight,
-    surface = AppBackgroundLight
+    onBackground = Color(0xFF0F172A),
+    surface = AppSurfaceLight,
+    onSurface = Color(0xFF0F172A),
+    surfaceVariant = Color(0xFFF1F5F9),
+    onSurfaceVariant = Color(0xFF334155)
 )
 
 @Composable

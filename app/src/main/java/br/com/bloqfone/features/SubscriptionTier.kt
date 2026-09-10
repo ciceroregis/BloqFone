@@ -34,4 +34,11 @@ object FeatureAccessPolicy {
     }
 
     fun premiumFeatures(): List<AppFeature> = AppFeature.entries.filter { it.tier == SubscriptionTier.PREMIUM }
+
+    /**
+     * Durante a fase exclusivamente gratuita, apenas as funcionalidades Free são exibidas e ativadas.
+     */
+    fun isFeatureVisibleInFreeRelease(feature: AppFeature): Boolean = feature.tier == SubscriptionTier.FREE
+
+    fun freeFeatures(): List<AppFeature> = AppFeature.entries.filter { it.tier == SubscriptionTier.FREE }
 }

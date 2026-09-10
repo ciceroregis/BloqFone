@@ -165,4 +165,42 @@ class CallBlockEvaluatorTest {
         )
         assertEquals("spam", spam)
     }
+
+    @Test
+    fun `free mode allows safe calls and blocks blacklist`() {
+        val freeSnapshot = defaultSnapshot(
+            shouldBlockUnknownNumbers = true,
+            shouldBlockPrivateNumbers = true,
+            shouldBlockNoCallerId = true,
+            blacklistNumbers = setOf("+5511999991111"),
+            whitelistNumbers = setOf("+5511999992222")
+        )
+
+        // Safe unknown-to-blacklist number allowed
+        val safeCall = CallBlockEvaluator.evaluateBlockReason(
+            rawIncomingNumber = "+5511988887777",
+            handlePresentation = HANDLE_PRESENTATION_ALLOWED,
+            isInContacts = false,
+            snapshot = freeSnapshot
+        )
+        assertNull(safeCall)
+
+        // Blacklisted number blocked
+        val blacklistedCall = CallBlockEvaluator.evaluateBlockReason(
+            rawIncomingNumber = "+5511999991111",
+            handlePresentation = HANDLE_PRESENTATION_ALLOWED,
+            isInContacts = false,
+            snapshot = freeSnapshot
+        )
+        assertEquals("lista negra", blacklistedCall)
+
+        // Whitelisted number always allowed even if restricted
+        val whitelistedCall = CallBlockEvaluator.evaluateBlockReason(
+            rawIncomingNumber = "+5511999992222",
+            handlePresentation = HANDLE_PRESENTATION_RESTRICTED,
+            isInContacts = false,
+            snapshot = freeSnapshot
+        )
+        assertNull(whitelistedCall)
+    }
 }

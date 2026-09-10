@@ -82,3 +82,43 @@ fun getBrazilDdd(number: ParsedPhoneNumber): String? {
     }
     return if (digits.length >= 10) digits.take(2) else null
 }
+
+fun formatPhoneNumberForDisplay(number: String): String {
+    val trimmed = number.trim()
+    if (trimmed.isEmpty()) return ""
+    val hasPlus = trimmed.startsWith("+")
+    val digits = trimmed.filter { it.isDigit() }
+
+    if (hasPlus && digits.startsWith("55") && (digits.length == 12 || digits.length == 13)) {
+        val ddd = digits.substring(2, 4)
+        val rest = digits.substring(4)
+        return if (rest.length == 9) {
+            "+55 ($ddd) ${rest.substring(0, 5)}-${rest.substring(5)}"
+        } else {
+            "+55 ($ddd) ${rest.substring(0, 4)}-${rest.substring(4)}"
+        }
+    }
+
+    if (!hasPlus) {
+        if (digits.length == 11) {
+            val ddd = digits.substring(0, 2)
+            val rest = digits.substring(2)
+            return "($ddd) ${rest.substring(0, 5)}-${rest.substring(5)}"
+        }
+
+        if (digits.length == 10) {
+            val ddd = digits.substring(0, 2)
+            val rest = digits.substring(2)
+            return "($ddd) ${rest.substring(0, 4)}-${rest.substring(4)}"
+        }
+    }
+
+    return if (hasPlus) "+$digits" else digits
+}
+
+fun maskPhoneNumberForLog(number: String?): String {
+    if (number.isNullOrBlank()) return "[NÃO IDENTIFICADO]"
+    val digits = number.filter { it.isDigit() }
+    if (digits.length <= 4) return "****"
+    return "****${digits.takeLast(4)}"
+}

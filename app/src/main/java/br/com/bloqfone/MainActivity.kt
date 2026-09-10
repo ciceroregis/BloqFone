@@ -3,16 +3,15 @@ package br.com.bloqfone
 import android.app.role.RoleManager
 import android.content.Context
 import android.os.Bundle
-import android.widget.Toast
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.viewmodel.compose.viewModel
 import br.com.bloqfone.ui.AppScreen
 import br.com.bloqfone.ui.MainViewModel
 import br.com.bloqfone.ui.MainViewModelFactory
@@ -20,28 +19,43 @@ import br.com.bloqfone.ui.theme.BloqFoneTheme
 
 class MainActivity : ComponentActivity() {
 
+    companion object {
+        private const val TAG = "BloqFone:MainActivity"
+    }
+
+    private val viewModel: MainViewModel by viewModels {
+        MainViewModelFactory(applicationContext)
+    }
+
     private val roleRequestLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        if (result.resultCode == RESULT_OK) {
-            Toast.makeText(this, getString(R.string.toast_role_granted), Toast.LENGTH_SHORT).show()
-        } else {
-            Toast.makeText(this, getString(R.string.toast_role_denied), Toast.LENGTH_LONG).show()
+        try {
+            val roleManager = getSystemService(Context.ROLE_SERVICE) as RoleManager
+            val isHeld = roleManager.isRoleHeld(RoleManager.ROLE_CALL_SCREENING)
+            viewModel.updateRoleStatus(isHeld)
+            if (result.resultCode == RESULT_OK || isHeld) {
+                Log.i(TAG, "[SUCESSO] Permissão ROLE_CALL_SCREENING concedida pelo usuário. Role ativa: $isHeld.")
+                viewModel.showFeedback(getString(R.string.toast_role_granted), br.com.bloqfone.ui.FeedbackType.SUCCESS)
+            } else {
+                Log.w(TAG, "[ERRO] Permissão ROLE_CALL_SCREENING recusada ou cancelada pelo usuário (resultCode=${result.resultCode}, isHeld=$isHeld).")
+                viewModel.showFeedback(getString(R.string.toast_role_denied), br.com.bloqfone.ui.FeedbackType.WARNING)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "[ERRO] Falha ao verificar resultado da solicitação de ROLE_CALL_SCREENING.", e)
+            viewModel.showFeedback(getString(R.string.toast_role_denied), br.com.bloqfone.ui.FeedbackType.ERROR)
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.i(TAG, "[SUCESSO] MainActivity inicializada com sucesso.")
         setContent {
             BloqFoneTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    val context = LocalContext.current
-                    val viewModel: MainViewModel = viewModel(
-                        factory = MainViewModelFactory(context.applicationContext)
-                    )
                     AppScreen(
                         viewModel = viewModel,
                         onRequestRole = { requestCallScreeningRole() }
@@ -51,13 +65,34 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        try {
+            val roleManager = getSystemService(Context.ROLE_SERVICE) as RoleManager
+            val isHeld = roleManager.isRoleHeld(RoleManager.ROLE_CALL_SCREENING)
+            viewModel.updateRoleStatus(isHeld)
+            viewModel.refreshBlockedCalls()
+            Log.d(TAG, "[RASTREAMENTO] MainActivity retomada. Status da Role ROLE_CALL_SCREENING: isHeld=$isHeld.")
+        } catch (e: Exception) {
+            Log.e(TAG, "[ERRO] Falha ao consultar status da ROLE_CALL_SCREENING em onResume.", e)
+        }
+    }
+
     private fun requestCallScreeningRole() {
-        val roleManager = getSystemService(Context.ROLE_SERVICE) as RoleManager
-        if (!roleManager.isRoleHeld(RoleManager.ROLE_CALL_SCREENING)) {
-            val intent = roleManager.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING)
-            roleRequestLauncher.launch(intent)
-        } else {
-            Toast.makeText(this, getString(R.string.toast_role_already_set), Toast.LENGTH_SHORT).show()
+        try {
+            val roleManager = getSystemService(Context.ROLE_SERVICE) as RoleManager
+            if (!roleManager.isRoleHeld(RoleManager.ROLE_CALL_SCREENING)) {
+                Log.i(TAG, "[RASTREAMENTO] Disparando intenção do sistema para solicitar ROLE_CALL_SCREENING ao usuário.")
+                val intent = roleManager.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING)
+                roleRequestLauncher.launch(intent)
+            } else {
+                Log.i(TAG, "[SUCESSO] ROLE_CALL_SCREENING já está ativa. Nenhuma ação necessária.")
+                viewModel.updateRoleStatus(true)
+                viewModel.showFeedback(getString(R.string.toast_role_already_set), br.com.bloqfone.ui.FeedbackType.INFO)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "[ERRO] Falha ao iniciar solicitação de ROLE_CALL_SCREENING.", e)
+            viewModel.showFeedback("Falha ao abrir solicitação do sistema.", br.com.bloqfone.ui.FeedbackType.ERROR)
         }
     }
 }

@@ -2,6 +2,7 @@ package br.com.bloqfone.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 import androidx.core.content.edit
 
 class ConfigRepository(context: Context) {
@@ -10,6 +11,7 @@ class ConfigRepository(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences("bloqfone_prefs", Context.MODE_PRIVATE)
 
     companion object {
+        private const val TAG = "BloqFone:ConfigRepo"
         private const val KEY_PREMIUM_USER = "is_premium_user"
         private const val KEY_FOCUS_MODE = "focus_mode"
         private const val KEY_BLOCK_UNKNOWN = "block_unknown_numbers"
@@ -99,61 +101,129 @@ class ConfigRepository(context: Context) {
 
     fun addToBlacklist(number: String): Boolean {
         val normalized = sanitizePhone(number)
-        if (normalized.isEmpty()) return false
-        val updated = getBlacklistNumbers().toMutableSet().apply { add(normalized) }
-        putSet(KEY_BLACKLIST, updated)
-        return true
+        if (normalized.isEmpty()) {
+            Log.w(TAG, "[ERRO] Falha ao adicionar à lista negra: número inválido ou vazio ('${maskPhoneNumberForLog(number)}').")
+            return false
+        }
+        return try {
+            val updated = getBlacklistNumbers().toMutableSet().apply { add(normalized) }
+            putSet(KEY_BLACKLIST, updated)
+            Log.i(TAG, "[SUCESSO] Número adicionado à lista negra: ${maskPhoneNumberForLog(normalized)}.")
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "[ERRO] Exceção ao salvar número na lista negra: ${maskPhoneNumberForLog(normalized)}.", e)
+            false
+        }
     }
 
     fun removeFromBlacklist(number: String) {
         val normalized = sanitizePhone(number)
-        if (normalized.isEmpty()) return
-        val updated = getBlacklistNumbers().toMutableSet().apply { remove(normalized) }
-        putSet(KEY_BLACKLIST, updated)
+        if (normalized.isEmpty()) {
+            Log.w(TAG, "[AVISO] Falha ao remover da lista negra: número inválido ou vazio.")
+            return
+        }
+        try {
+            val updated = getBlacklistNumbers().toMutableSet().apply { remove(normalized) }
+            putSet(KEY_BLACKLIST, updated)
+            Log.i(TAG, "[SUCESSO] Número removido da lista negra: ${maskPhoneNumberForLog(normalized)}.")
+        } catch (e: Exception) {
+            Log.e(TAG, "[ERRO] Exceção ao remover número da lista negra: ${maskPhoneNumberForLog(normalized)}.", e)
+        }
     }
 
     fun addToWhitelist(number: String): Boolean {
         val normalized = sanitizePhone(number)
-        if (normalized.isEmpty()) return false
-        val updated = getWhitelistNumbers().toMutableSet().apply { add(normalized) }
-        putSet(KEY_WHITELIST, updated)
-        return true
+        if (normalized.isEmpty()) {
+            Log.w(TAG, "[ERRO] Falha ao adicionar à lista branca: número inválido ou vazio ('${maskPhoneNumberForLog(number)}').")
+            return false
+        }
+        return try {
+            val updated = getWhitelistNumbers().toMutableSet().apply { add(normalized) }
+            putSet(KEY_WHITELIST, updated)
+            Log.i(TAG, "[SUCESSO] Número adicionado à lista branca: ${maskPhoneNumberForLog(normalized)}.")
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "[ERRO] Exceção ao salvar número na lista branca: ${maskPhoneNumberForLog(normalized)}.", e)
+            false
+        }
     }
 
     fun removeFromWhitelist(number: String) {
         val normalized = sanitizePhone(number)
-        if (normalized.isEmpty()) return
-        val updated = getWhitelistNumbers().toMutableSet().apply { remove(normalized) }
-        putSet(KEY_WHITELIST, updated)
+        if (normalized.isEmpty()) {
+            Log.w(TAG, "[AVISO] Falha ao remover da lista branca: número inválido ou vazio.")
+            return
+        }
+        try {
+            val updated = getWhitelistNumbers().toMutableSet().apply { remove(normalized) }
+            putSet(KEY_WHITELIST, updated)
+            Log.i(TAG, "[SUCESSO] Número removido da lista branca: ${maskPhoneNumberForLog(normalized)}.")
+        } catch (e: Exception) {
+            Log.e(TAG, "[ERRO] Exceção ao remover número da lista branca: ${maskPhoneNumberForLog(normalized)}.", e)
+        }
     }
 
     fun addBlockedCountryCode(code: String): Boolean {
         val normalized = sanitizeDigits(code)
-        if (normalized.length !in 1..3) return false
-        val updated = getBlockedCountryCodes().toMutableSet().apply { add(normalized) }
-        putSet(KEY_BLOCKED_COUNTRIES, updated)
-        return true
+        if (normalized.length !in 1..3) {
+            Log.w(TAG, "[ERRO] Falha ao adicionar código de país: '$code' inválido (deve ter 1 a 3 dígitos).")
+            return false
+        }
+        return try {
+            val updated = getBlockedCountryCodes().toMutableSet().apply { add(normalized) }
+            putSet(KEY_BLOCKED_COUNTRIES, updated)
+            Log.i(TAG, "[SUCESSO] Código de país DDI (+$normalized) adicionado aos bloqueios.")
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "[ERRO] Exceção ao salvar código de país bloqueado: $normalized.", e)
+            false
+        }
     }
 
     fun removeBlockedCountryCode(code: String) {
         val normalized = sanitizeDigits(code)
-        if (normalized.isEmpty()) return
-        val updated = getBlockedCountryCodes().toMutableSet().apply { remove(normalized) }
-        putSet(KEY_BLOCKED_COUNTRIES, updated)
+        if (normalized.isEmpty()) {
+            Log.w(TAG, "[AVISO] Falha ao remover código de país: entrada vazia.")
+            return
+        }
+        try {
+            val updated = getBlockedCountryCodes().toMutableSet().apply { remove(normalized) }
+            putSet(KEY_BLOCKED_COUNTRIES, updated)
+            Log.i(TAG, "[SUCESSO] Código de país DDI (+$normalized) removido dos bloqueios.")
+        } catch (e: Exception) {
+            Log.e(TAG, "[ERRO] Exceção ao remover código de país bloqueado: $normalized.", e)
+        }
     }
 
     fun addBlockedDdd(ddd: String): Boolean {
         val normalized = sanitizeDigits(ddd)
-        if (normalized.length != 2) return false
-        val updated = getBlockedDdds().toMutableSet().apply { add(normalized) }
-        putSet(KEY_BLOCKED_DDDS, updated)
-        return true
+        if (normalized.length != 2) {
+            Log.w(TAG, "[ERRO] Falha ao adicionar DDD: '$ddd' inválido (deve conter exatamente 2 dígitos).")
+            return false
+        }
+        return try {
+            val updated = getBlockedDdds().toMutableSet().apply { add(normalized) }
+            putSet(KEY_BLOCKED_DDDS, updated)
+            Log.i(TAG, "[SUCESSO] DDD ($normalized) adicionado aos bloqueios.")
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "[ERRO] Exceção ao salvar DDD bloqueado: $normalized.", e)
+            false
+        }
     }
 
     fun removeBlockedDdd(ddd: String) {
         val normalized = sanitizeDigits(ddd)
-        if (normalized.isEmpty()) return
-        val updated = getBlockedDdds().toMutableSet().apply { remove(normalized) }
-        putSet(KEY_BLOCKED_DDDS, updated)
+        if (normalized.isEmpty()) {
+            Log.w(TAG, "[AVISO] Falha ao remover DDD: entrada vazia.")
+            return
+        }
+        try {
+            val updated = getBlockedDdds().toMutableSet().apply { remove(normalized) }
+            putSet(KEY_BLOCKED_DDDS, updated)
+            Log.i(TAG, "[SUCESSO] DDD ($normalized) removido dos bloqueios.")
+        } catch (e: Exception) {
+            Log.e(TAG, "[ERRO] Exceção ao remover DDD bloqueado: $normalized.", e)
+        }
     }
 }

@@ -3,69 +3,112 @@ package br.com.bloqfone.services
 import android.telecom.Call
 import android.telecom.CallScreeningService
 import android.util.Log
+import br.com.bloqfone.data.BlockedCallsRepository
 import br.com.bloqfone.data.ConfigRepository
 import br.com.bloqfone.data.ContactsRepository
+import br.com.bloqfone.data.maskPhoneNumberForLog
 import br.com.bloqfone.data.parsePhoneNumber
 
 class CallInterceptorService : CallScreeningService() {
 
     private lateinit var contactsRepository: ContactsRepository
     private lateinit var configRepository: ConfigRepository
+    private lateinit var blockedCallsRepository: BlockedCallsRepository
+
+    companion object {
+        private const val TAG = "BloqFone:CallInterceptor"
+    }
 
     override fun onCreate() {
         super.onCreate()
-        // Initialize the repositories when the service is created
-        contactsRepository = ContactsRepository(this)
-        configRepository = ConfigRepository(this)
+        try {
+            // Initialize the repositories when the service is created
+            contactsRepository = ContactsRepository(this)
+            configRepository = ConfigRepository(this)
+            blockedCallsRepository = BlockedCallsRepository(this)
+            Log.i(TAG, "[SUCESSO] CallInterceptorService criado e repositórios inicializados com sucesso.")
+        } catch (e: Exception) {
+            Log.e(TAG, "[ERRO] Falha ao inicializar dependências do CallInterceptorService.", e)
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Log.i(TAG, "[RASTREAMENTO] CallInterceptorService destruído (onDestroy).")
     }
 
     override fun onScreenCall(callDetails: Call.Details) {
-        if (callDetails.callDirection != Call.Details.DIRECTION_INCOMING) return
-
-        val rawIncomingNumber = callDetails.handle?.schemeSpecificPart
-        val parsedNumber = parsePhoneNumber(rawIncomingNumber)
-        debugLog("Analisando chamada de: ${maskNumberForLog(parsedNumber.normalized)}")
-
-        val responseBuilder = CallResponse.Builder()
-        val isInContacts = contactsRepository.doesNumberExistInContacts(parsedNumber.normalized)
-        val blockReason = CallBlockEvaluator.evaluateBlockReason(
-            rawIncomingNumber = rawIncomingNumber,
-            handlePresentation = callDetails.handlePresentation,
-            isInContacts = isInContacts,
-            snapshot = currentSnapshot()
-        )
-
-        if (blockReason != null) {
-            debugLog("Bloqueado por regra: $blockReason")
-            applyBlockingAction(responseBuilder)
-        } else {
-            responseBuilder
-                .setDisallowCall(false)
-                .setRejectCall(false)
-                .setSilenceCall(false)
-                .setSkipNotification(false)
+        if (callDetails.callDirection != Call.Details.DIRECTION_INCOMING) {
+            Log.d(TAG, "[RASTREAMENTO] Chamada ignorada: direção não é entrante (direction=${callDetails.callDirection}).")
+            return
         }
 
-        respondToCall(callDetails, responseBuilder.build())
+        val rawIncomingNumber = callDetails.handle?.schemeSpecificPart
+        val maskedNumber = maskPhoneNumberForLog(rawIncomingNumber)
+        Log.i(TAG, "[RASTREAMENTO] Nova chamada recebida para triagem: número=$maskedNumber, presentation=${callDetails.handlePresentation}")
+
+        try {
+            val parsedNumber = parsePhoneNumber(rawIncomingNumber)
+            val isInContacts = contactsRepository.doesNumberExistInContacts(parsedNumber.normalized)
+            Log.d(TAG, "[RASTREAMENTO] Verificação de contato para $maskedNumber: estáNosContatos=$isInContacts")
+
+            val blockReason = CallBlockEvaluator.evaluateBlockReason(
+                rawIncomingNumber = rawIncomingNumber,
+                handlePresentation = callDetails.handlePresentation,
+                isInContacts = isInContacts,
+                snapshot = currentSnapshot()
+            )
+
+            val responseBuilder = CallResponse.Builder()
+            if (blockReason != null) {
+                applyBlockingAction(responseBuilder)
+                blockedCallsRepository.recordBlockedCall(
+                    rawNumber = rawIncomingNumber,
+                    reason = blockReason,
+                    autoReject = configRepository.shouldAutoReject
+                )
+                Log.i(
+                    TAG,
+                    "[SUCESSO] Chamada BLOQUEADA para $maskedNumber. Motivo: $blockReason. Ação aplicada: autoReject=${configRepository.shouldAutoReject}."
+                )
+            } else {
+                responseBuilder
+                    .setDisallowCall(false)
+                    .setRejectCall(false)
+                    .setSilenceCall(false)
+                    .setSkipNotification(false)
+                Log.i(TAG, "[SUCESSO] Chamada PERMITIDA para $maskedNumber. Nenhuma regra de bloqueio violada.")
+            }
+
+            respondToCall(callDetails, responseBuilder.build())
+            Log.d(TAG, "[SUCESSO] Resposta de triagem despachada ao Telecom com sucesso para $maskedNumber.")
+        } catch (e: Exception) {
+            Log.e(TAG, "[ERRO] Falha ao processar triagem de chamada para $maskedNumber: ${e.message}", e)
+            try {
+                // Fallback seguro: permite a chamada para que o usuário não perca ligações por falhas inesperadas
+                val fallbackResponse = CallResponse.Builder()
+                    .setDisallowCall(false)
+                    .setRejectCall(false)
+                    .setSilenceCall(false)
+                    .setSkipNotification(false)
+                    .build()
+                respondToCall(callDetails, fallbackResponse)
+                Log.i(TAG, "[SUCESSO] Resposta de fallback (permitir chamada) despachada após erro.")
+            } catch (fallbackEx: Exception) {
+                Log.e(TAG, "[ERRO] Falha catastrófica ao despachar resposta de fallback ao Telecom.", fallbackEx)
+            }
+        }
     }
 
     private fun applyBlockingAction(builder: CallResponse.Builder) {
-        val sendToVoicemail = configRepository.shouldSendToVoicemail
         val autoReject = configRepository.shouldAutoReject
-        val silentBlocking = configRepository.isSilentBlockingEnabled
-
-        val rejectCall = when {
-            sendToVoicemail -> false
-            autoReject -> true
-            else -> false
-        }
 
         builder
             .setDisallowCall(true)
-            .setRejectCall(rejectCall)
-            .setSilenceCall(silentBlocking || sendToVoicemail)
+            .setRejectCall(autoReject)
+            .setSilenceCall(!autoReject)
             .setSkipCallLog(false)
-            .setSkipNotification(silentBlocking || sendToVoicemail)
+            .setSkipNotification(false)
     }
 
     private fun currentSnapshot(): BlockingSnapshot {
@@ -83,15 +126,5 @@ class CallInterceptorService : CallScreeningService() {
             blockedCountryCodes = configRepository.getBlockedCountryCodes(),
             blockedDdds = configRepository.getBlockedDdds()
         )
-    }
-
-    private fun maskNumberForLog(number: String): String {
-        val digits = number.filter { it.isDigit() }
-        if (digits.length <= 4) return "****"
-        return "****${digits.takeLast(4)}"
-    }
-
-    private fun debugLog(message: String) {
-        Log.d("CallInterceptor", message)
     }
 }

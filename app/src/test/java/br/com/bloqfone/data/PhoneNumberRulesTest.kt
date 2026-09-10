@@ -75,4 +75,24 @@ class PhoneNumberRulesTest {
         assertEquals("21", getBrazilDdd(parsePhoneNumber("+5521988887777")))
         assertEquals(null, getBrazilDdd(parsePhoneNumber("9999")))
     }
+
+    @Test
+    fun `formatPhoneNumberForDisplay formats Brazilian numbers cleanly`() {
+        assertEquals("+55 (11) 98888-7777", formatPhoneNumberForDisplay("+5511988887777"))
+        assertEquals("+55 (11) 3333-4444", formatPhoneNumberForDisplay("+551133334444"))
+        assertEquals("(11) 98888-7777", formatPhoneNumberForDisplay("11988887777"))
+        assertEquals("(11) 3333-4444", formatPhoneNumberForDisplay("1133334444"))
+        assertEquals("+14155552671", formatPhoneNumberForDisplay("+14155552671"))
+        assertEquals("", formatPhoneNumberForDisplay("   "))
+    }
+
+    @Test
+    fun `maskPhoneNumberForLog masks digits safely for tracking logs`() {
+        assertEquals("****7777", maskPhoneNumberForLog("+55 (11) 98888-7777"))
+        assertEquals("****1234", maskPhoneNumberForLog("91234"))
+        assertEquals("****", maskPhoneNumberForLog("1234"))
+        assertEquals("****", maskPhoneNumberForLog("123"))
+        assertEquals("[NÃO IDENTIFICADO]", maskPhoneNumberForLog(""))
+        assertEquals("[NÃO IDENTIFICADO]", maskPhoneNumberForLog(null))
+    }
 }
