@@ -753,7 +753,7 @@ private fun HomeScreen(
 
         // Version Footer
         Text(
-            text = "BloqFone v1.0.0 • Proteção 100% Local e Offline",
+            text = "BloqFone • Proteção 100% Local e Offline",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
             modifier = Modifier
