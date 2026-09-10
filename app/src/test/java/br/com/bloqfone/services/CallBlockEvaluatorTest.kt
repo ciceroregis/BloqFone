@@ -203,4 +203,55 @@ class CallBlockEvaluatorTest {
         )
         assertNull(whitelistedCall)
     }
+
+    @Test
+    fun `specific threat rules take precedence over focus mode`() {
+        // When focus mode is enabled and number is not in contacts:
+        // Telemarketing should report "telemarketing", NOT "modo foco"
+        val telemarketingCall = CallBlockEvaluator.evaluateBlockReason(
+            rawIncomingNumber = "030312345678",
+            handlePresentation = HANDLE_PRESENTATION_ALLOWED,
+            isInContacts = false,
+            snapshot = defaultSnapshot(isFocusModeEnabled = true, shouldBlockTelemarketing = true)
+        )
+        assertEquals("telemarketing", telemarketingCall)
+
+        // Spam should report "spam", NOT "modo foco"
+        val spamCall = CallBlockEvaluator.evaluateBlockReason(
+            rawIncomingNumber = "90901234567",
+            handlePresentation = HANDLE_PRESENTATION_ALLOWED,
+            isInContacts = false,
+            snapshot = defaultSnapshot(isFocusModeEnabled = true, shouldBlockSpam = true)
+        )
+        assertEquals("spam", spamCall)
+
+        // Blocked DDD should report "DDD bloqueado (21)", NOT "modo foco"
+        val dddCall = CallBlockEvaluator.evaluateBlockReason(
+            rawIncomingNumber = "+5521988887777",
+            handlePresentation = HANDLE_PRESENTATION_ALLOWED,
+            isInContacts = false,
+            snapshot = defaultSnapshot(isFocusModeEnabled = true, blockedDdds = setOf("21"))
+        )
+        assertEquals("DDD bloqueado (21)", dddCall)
+
+        // Blacklist should report "lista negra", NOT "modo foco"
+        val blacklistCall = CallBlockEvaluator.evaluateBlockReason(
+            rawIncomingNumber = "+5511988887777",
+            handlePresentation = HANDLE_PRESENTATION_ALLOWED,
+            isInContacts = false,
+            snapshot = defaultSnapshot(isFocusModeEnabled = true, blacklistNumbers = setOf("+5511988887777"))
+        )
+        assertEquals("lista negra", blacklistCall)
+    }
+
+    @Test
+    fun `when focus mode is disabled non contacts without rules are allowed`() {
+        val call = CallBlockEvaluator.evaluateBlockReason(
+            rawIncomingNumber = "+5511988887777",
+            handlePresentation = HANDLE_PRESENTATION_ALLOWED,
+            isInContacts = false,
+            snapshot = defaultSnapshot(isFocusModeEnabled = false)
+        )
+        assertNull(call)
+    }
 }
