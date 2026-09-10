@@ -26,10 +26,11 @@ Este documento contém o passo a passo completo, estruturado e com os textos pro
 ## 1. Pré-requisitos e Arquivos Prontos
 
 - **Arquivo do Aplicativo (.aab):**  
-  O Google Play exige o formato Android App Bundle (`.aab`). O arquivo de produção compilado está localizado na raiz do projeto:  
-  `BloqFone-v1.0.0.aab`
+  O Google Play exige o formato Android App Bundle (`.aab`). O arquivo de produção mais recente compilado está localizado na raiz do projeto:  
+  `BloqFone-v1.0.1.aab` (versão 1.0.1, versionCode 2)
 - **URL da Política de Privacidade:**  
-  `https://github.com/ciceroregis/BloqFone/blob/main/PRIVACY_POLICY.md`
+  - **Opção 1 (GitHub Pages - Recomendado):** `https://ciceroregis.github.io/BloqFone/` (após ativar o GitHub Pages na pasta `/docs`)
+  - **Opção 2 (Markdown direto):** `https://github.com/ciceroregis/BloqFone/blob/main/PRIVACY_POLICY.md`
 - **E-mail de suporte:** `ciceroregis25@gmail.com`
 - **Site oficial/repositório:** `https://github.com/ciceroregis/BloqFone`
 
@@ -123,6 +124,12 @@ No menu lateral esquerdo, role até a seção **Política** e clique em **Conte�
 
 ### C. Anúncios
 - Selecione: **Não, meu app não contém anúncios**
+- Clique em **Salvar**.
+
+### C.1. ID de Publicidade (Advertising ID / AD_ID)
+- Pergunta: *O app usa um ID de publicidade?*
+- Selecione: **Não**
+- *(O app não usa AdMob, Firebase Analytics, nem qualquer SDK de anúncios ou rastreamento, e não possui a permissão `AD_ID` nem permissão de Internet).*
 - Clique em **Salvar**.
 
 ### D. Classificação de Conteúdo (Questionário IARC)

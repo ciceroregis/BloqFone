@@ -22,14 +22,14 @@ android {
         applicationId = "br.com.bloqfone"
         minSdk = 29
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.0.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     base {
-        archivesName.set("BloqFone-v1.0.0")
+        archivesName.set("BloqFone-v1.0.1")
     }
 
     signingConfigs {
