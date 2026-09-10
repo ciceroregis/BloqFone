@@ -1,20 +1,105 @@
 <resources>
     <string name="app_name">BloqFone</string>
-    <string name="home_title">Bloqueio de chamadas simplificado</string>
-    <string name="home_subtitle">Configure em poucos passos e reduza interrupções durante seu dia.</string>
+    <string name="app_tagline">Bloqueador inteligente de chamadas</string>
+    <string name="home_title">Proteção contra chamadas</string>
+    <string name="home_subtitle">Filtre chamadas indesejadas, números desconhecidos e gerencie suas listas com total privacidade.</string>
 
-    <string name="role_card_title">Ativar proteção principal</string>
-    <string name="role_card_description">Defina o BloqFone como app padrão de bloqueio para filtrar chamadas automaticamente.</string>
-    <string name="role_button_label">Definir como app de bloqueio</string>
+    <!-- Navigation -->
+    <string name="nav_home">Início</string>
+    <string name="nav_rules">Regras</string>
+    <string name="nav_lists">Listas</string>
+    <string name="nav_report">Relatório</string>
 
-    <string name="focus_mode_title">Modo foco rigoroso</string>
-    <string name="focus_mode_description">Bloqueia números que não estão salvos nos seus contatos.</string>
-    <string name="focus_mode_status_enabled">Status: ativo</string>
-    <string name="focus_mode_status_disabled">Status: desativado</string>
-    <string name="info_tip">Dica: ative o modo foco em períodos de trabalho para receber somente ligações conhecidas.</string>
+    <!-- Role status -->
+    <string name="role_active_title">Proteção Ativa</string>
+    <string name="role_active_subtitle">O BloqFone está definido como o app padrão de identificação e bloqueio de chamadas.</string>
+    <string name="role_inactive_title">Proteção Inativa</string>
+    <string name="role_inactive_subtitle">Para bloquear chamadas automaticamente, defina o BloqFone como app padrão do sistema.</string>
+    <string name="role_button_activate">Ativar Proteção Agora</string>
+    <string name="role_button_active">Proteção Ativada</string>
 
-    <string name="toast_role_granted">Permissão concedida! O bloqueio está ativo.</string>
-    <string name="toast_role_denied">Permissão negada. O app não vai bloquear chamadas.</string>
-    <string name="toast_role_already_set">O app já está definido como bloqueador padrão.</string>
-    <string name="toast_contacts_permission_needed">A permissão de contatos é necessária para o modo foco.</string>
+    <!-- Metrics -->
+    <string name="metric_blacklist">Bloqueados</string>
+    <string name="metric_active_rules">Regras Ativas</string>
+    <string name="metric_whitelist">Liberados</string>
+
+    <!-- Call Simulator -->
+    <string name="simulator_title">Simulador de Bloqueio</string>
+    <string name="simulator_subtitle">Digite um telefone para simular em tempo real se a chamada seria bloqueada ou permitida com as suas regras atuais.</string>
+    <string name="simulator_input_label">Número para teste (ex: 11988887777)</string>
+    <string name="simulator_private_toggle">Simular chamada de número privado/oculto</string>
+    <string name="simulator_button_test">Verificar Número</string>
+    <string name="simulator_tip">Não faz ligações reais: o teste é processado localmente no aparelho.</string>
+
+    <!-- Rules tab -->
+    <string name="rules_card_title">Filtros Automáticos</string>
+    <string name="rules_card_description">Escolha quais tipos de chamadas desconhecidas você deseja barrar automaticamente.</string>
+    <string name="block_focus_mode_title">Bloquear fora da agenda (Modo Foco)</string>
+    <string name="block_focus_mode_description">Permite apenas chamadas de contatos salvos no seu celular. Qualquer outro número será bloqueado imediatamente.</string>
+    <string name="block_telemarketing_title">Bloquear telemarketing (0303)</string>
+    <string name="block_telemarketing_description">Bloqueia chamadas com prefixo oficial de telemarketing 0303 da Anatel.</string>
+    <string name="block_robocalls_title">Bloquear ligações robô (Robocalls)</string>
+    <string name="block_robocalls_description">Bloqueia números com dígitos repetitivos de discadores automáticos em massa.</string>
+    <string name="block_spam_title">Bloquear suspeita de spam</string>
+    <string name="block_spam_description">Bloqueia chamadas com padrões suspeitos conhecidos (centrais 3003, a cobrar 9090 ou finais 0000).</string>
+    <string name="block_international_title">Bloquear chamadas internacionais</string>
+    <string name="block_international_description">Bloqueia ligações originadas de fora do Brasil (+DDI internacional).</string>
+    <string name="block_unknown_title">Bloquear números desconhecidos</string>
+    <string name="block_unknown_description">Bloqueia chamadas recebidas sem número de telefone identificável.</string>
+    <string name="block_private_title">Bloquear números privados e ocultos</string>
+    <string name="block_private_description">Bloqueia ligações com apresentação restrita, confidencial ou oculta.</string>
+    <string name="block_no_caller_id_title">Bloquear sem identificador de chamada</string>
+    <string name="block_no_caller_id_description">Bloqueia chamadas quando a operadora não envia os dados da linha que está ligando.</string>
+    <string name="simulator_block_this_number">Bloquear este número na Lista Negra</string>
+
+    <string name="actions_card_title">Ação ao Barrar</string>
+    <string name="actions_card_description">Defina como o telefone se comporta ao detectar uma chamada bloqueada.</string>
+    <string name="auto_reject_title">Recusar chamada imediatamente</string>
+    <string name="auto_reject_description">Desliga a chamada bloqueada na hora. Se desativado, a chamada será silenciada.</string>
+
+    <!-- Lists tab -->
+    <string name="tab_blacklist">Lista Negra</string>
+    <string name="tab_whitelist">Lista Branca</string>
+    <string name="blacklist_title">Números Bloqueados (Lista Negra)</string>
+    <string name="blacklist_description">Qualquer chamada vinda destes números será bloqueada imediatamente.</string>
+    <string name="whitelist_title">Números Permitidos (Lista Branca)</string>
+    <string name="whitelist_description">Números nesta lista sempre tocarão normalmente, tendo prioridade sobre as regras de bloqueio.</string>
+    <string name="search_placeholder">Pesquisar na lista...</string>
+    <string name="add_number_label">Número de telefone</string>
+    <string name="add_number_placeholder">Ex: (11) 98765-4321 ou +55...</string>
+    <string name="add_button">Adicionar</string>
+    <string name="remove_button">Remover</string>
+    <string name="move_to_whitelist">Mover para Lista Branca</string>
+    <string name="move_to_blacklist">Mover para Lista Negra</string>
+    <string name="empty_blacklist">Nenhum número na Lista Negra.</string>
+    <string name="empty_whitelist">Nenhum número na Lista Branca.</string>
+    <string name="empty_search">Nenhum número encontrado para esta pesquisa.</string>
+
+    <!-- Privacy & Tips -->
+    <string name="privacy_card_title">Privacidade e Segurança</string>
+    <string name="privacy_card_text">O BloqFone funciona 100% offline. Nenhuma informação de chamadas, números ou contatos é enviada para servidores externos.</string>
+
+    <!-- Toasts -->
+    <string name="toast_role_granted">Proteção ativada! O BloqFone agora filtra suas chamadas.</string>
+    <string name="toast_role_denied">Permissão necessária para que o BloqFone possa filtrar chamadas.</string>
+    <string name="toast_role_already_set">O BloqFone já está ativo como app de bloqueio padrão.</string>
+    <string name="toast_invalid_number">Por favor, digite um número de telefone válido.</string>
+    <string name="toast_number_added">Número adicionado com sucesso!</string>
+    <string name="toast_number_removed">Número removido.</string>
+    <string name="toast_number_moved">Número movido com sucesso.</string>
+
+    <!-- Report -->
+    <string name="metric_blocked_calls">Barradas</string>
+    <string name="report_title">Relatório de Bloqueios</string>
+    <string name="report_subtitle">Histórico em tempo real de todas as chamadas bloqueadas automaticamente pelo BloqFone.</string>
+    <string name="report_clear">Limpar Relatório</string>
+    <string name="report_empty">Nenhuma chamada bloqueada até o momento.</string>
+    <string name="report_empty_search">Nenhum registro encontrado para esta pesquisa.</string>
+    <string name="report_search_placeholder">Buscar por número ou motivo...</string>
+    <string name="report_dialog_clear_title">Limpar Relatório?</string>
+    <string name="report_dialog_clear_desc">Todas as chamadas bloqueadas registradas serão apagadas do histórico. Essa ação não pode ser desfeita.</string>
+    <string name="report_dialog_delete_title">Remover do Relatório?</string>
+    <string name="report_dialog_delete_desc">Deseja excluir este registro de chamada do relatório?</string>
+    <string name="report_badge_rejected">Recusada</string>
+    <string name="report_badge_silenced">Silenciada</string>
 </resources>
