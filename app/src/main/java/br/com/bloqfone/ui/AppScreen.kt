@@ -128,7 +128,8 @@ private data class FeedbackStyle(
 @Composable
 fun AppScreen(
     viewModel: MainViewModel,
-    onRequestRole: () -> Unit
+    onRequestRole: () -> Unit,
+    onRequestContactsPermission: () -> Unit = {}
 ) {
     var showStatusInfoDialog by remember { mutableStateOf(false) }
 
@@ -238,7 +239,8 @@ fun AppScreen(
                     onNavigateToReport = { viewModel.selectNavTab(3) }
                 )
                 1 -> RulesScreen(
-                    viewModel = viewModel
+                    viewModel = viewModel,
+                    onRequestContactsPermission = onRequestContactsPermission
                 )
                 2 -> ListsScreen(
                     viewModel = viewModel
@@ -807,7 +809,8 @@ private fun MetricCard(
 
 @Composable
 private fun RulesScreen(
-    viewModel: MainViewModel
+    viewModel: MainViewModel,
+    onRequestContactsPermission: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -839,8 +842,50 @@ private fun RulesScreen(
                     title = stringResource(id = R.string.block_focus_mode_title),
                     description = stringResource(id = R.string.block_focus_mode_description),
                     checked = viewModel.isFocusModeOn,
-                    onCheckedChange = viewModel::toggleFocusMode
+                    onCheckedChange = { checked ->
+                        viewModel.toggleFocusMode(checked, onRequestContactsPermission)
+                    }
                 )
+
+                if (!viewModel.hasContactsPermission) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.45f)
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(14.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = stringResource(id = R.string.contacts_permission_banner_title),
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                            Text(
+                                text = stringResource(id = R.string.contacts_permission_banner_desc),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                            Button(
+                                onClick = onRequestContactsPermission,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.error
+                                ),
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = stringResource(id = R.string.contacts_permission_grant_button),
+                                    style = MaterialTheme.typography.labelMedium
+                                )
+                            }
+                        }
+                    }
+                }
 
                 HorizontalDivider()
 

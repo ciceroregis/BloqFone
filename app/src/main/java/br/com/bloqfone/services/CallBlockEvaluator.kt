@@ -8,10 +8,13 @@ import br.com.bloqfone.data.isLikelyRobocall
 import br.com.bloqfone.data.isLikelySpam
 import br.com.bloqfone.data.isNoCallerId
 import br.com.bloqfone.data.isPrivateOrHiddenPresentation
+import br.com.bloqfone.data.isTelemarketingDisplayName
+import br.com.bloqfone.data.matchesNumberList
 import br.com.bloqfone.data.parsePhoneNumber
 
 data class BlockingSnapshot(
     val isFocusModeEnabled: Boolean,
+    val hasContactsPermission: Boolean = true,
     val shouldBlockUnknownNumbers: Boolean,
     val shouldBlockPrivateNumbers: Boolean,
     val shouldBlockNoCallerId: Boolean,
@@ -30,20 +33,25 @@ object CallBlockEvaluator {
         rawIncomingNumber: String?,
         handlePresentation: Int,
         isInContacts: Boolean,
-        snapshot: BlockingSnapshot
+        snapshot: BlockingSnapshot,
+        callerDisplayName: String? = null,
+        callerVerificationStatus: Int = 0
     ): String? {
         val number = parsePhoneNumber(rawIncomingNumber)
-        val normalized = number.normalized
 
-        if (isWhitelisted(normalized, snapshot)) return null
-        if (isBlacklisted(normalized, snapshot)) return "lista negra"
+        if (isWhitelisted(number, snapshot)) return null
+        if (isBlacklisted(number, snapshot)) return "lista negra"
         if (shouldBlockPrivate(handlePresentation, snapshot)) return "número privado/oculto"
         if (shouldBlockNoCallerId(handlePresentation, number, snapshot)) return "sem identificação"
         if (shouldBlockUnknown(number, snapshot)) return "número desconhecido"
 
-        if (snapshot.shouldBlockTelemarketing && isBrazilianTelemarketingNumber(number)) return "telemarketing"
+        if (snapshot.shouldBlockTelemarketing && (isBrazilianTelemarketingNumber(number) || isTelemarketingDisplayName(callerDisplayName))) {
+            return "telemarketing"
+        }
         if (snapshot.shouldBlockRobocalls && isLikelyRobocall(number)) return "robocall"
-        if (snapshot.shouldBlockSpam && isLikelySpam(number)) return "spam"
+        if (snapshot.shouldBlockSpam && isLikelySpam(number, callerDisplayName, callerVerificationStatus)) {
+            return "spam"
+        }
 
         val dddMatch = blockedDddMatch(number, snapshot)
         if (dddMatch != null) return "DDD bloqueado ($dddMatch)"
@@ -57,12 +65,12 @@ object CallBlockEvaluator {
         return null
     }
 
-    private fun isWhitelisted(normalized: String, snapshot: BlockingSnapshot): Boolean {
-        return normalized.isNotBlank() && snapshot.whitelistNumbers.contains(normalized)
+    private fun isWhitelisted(number: ParsedPhoneNumber, snapshot: BlockingSnapshot): Boolean {
+        return matchesNumberList(number, snapshot.whitelistNumbers)
     }
 
-    private fun isBlacklisted(normalized: String, snapshot: BlockingSnapshot): Boolean {
-        return normalized.isNotBlank() && snapshot.blacklistNumbers.contains(normalized)
+    private fun isBlacklisted(number: ParsedPhoneNumber, snapshot: BlockingSnapshot): Boolean {
+        return matchesNumberList(number, snapshot.blacklistNumbers)
     }
 
     private fun shouldBlockPrivate(handlePresentation: Int, snapshot: BlockingSnapshot): Boolean {
@@ -82,7 +90,9 @@ object CallBlockEvaluator {
     }
 
     private fun shouldBlockByFocusMode(isInContacts: Boolean, snapshot: BlockingSnapshot): Boolean {
-        return snapshot.isFocusModeEnabled && !isInContacts
+        // Modo foco só bloqueia quando a permissão de contatos estiver ativa e o número não for da agenda.
+        // Se a permissão não foi concedida pelo usuário, o Modo Foco não bloqueia cegamente todas as chamadas.
+        return snapshot.isFocusModeEnabled && snapshot.hasContactsPermission && !isInContacts
     }
 
     private fun shouldBlockInternational(number: ParsedPhoneNumber, snapshot: BlockingSnapshot): Boolean {

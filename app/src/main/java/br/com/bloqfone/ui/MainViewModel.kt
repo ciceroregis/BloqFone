@@ -37,6 +37,14 @@ class MainViewModel(
     var isCallScreeningRoleHeld by mutableStateOf(false)
         private set
 
+    var hasContactsPermission by mutableStateOf(false)
+        private set
+
+    fun updateContactsPermission(isGranted: Boolean) {
+        hasContactsPermission = isGranted
+        Log.i(TAG, "[RASTREAMENTO] Permissão de contatos atualizada na ViewModel: isGranted=$isGranted")
+    }
+
     var isPremiumUser by mutableStateOf(configRepository.isPremiumUser)
         private set
 
@@ -169,8 +177,13 @@ class MainViewModel(
         isPremiumUser = enabled
     }
 
-    fun toggleFocusMode(enabled: Boolean) {
+    fun toggleFocusMode(enabled: Boolean, onRequestPermission: () -> Unit = {}) {
         if (enabled && !canUseFeature(AppFeature.MODE_FOCUS)) return
+        if (enabled && !hasContactsPermission) {
+            onRequestPermission()
+            showFeedback("Permissão de contatos necessária para ativar o Modo Foco.", FeedbackType.WARNING)
+            return
+        }
         isFocusModeOn = enabled
         configRepository.isFocusModeEnabled = enabled
         Log.i(TAG, "[RASTREAMENTO] Regra 'modo foco' alterada para: $enabled")

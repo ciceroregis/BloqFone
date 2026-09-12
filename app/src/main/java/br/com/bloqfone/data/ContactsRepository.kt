@@ -41,8 +41,37 @@ class ContactsRepository(private val context: Context) {
             )?.use { cursor ->
                 cursor.moveToFirst()
             } ?: false
-            Log.d(TAG, "[SUCESSO] Consulta de contatos para $masked finalizada com sucesso (encontrado=$exists).")
-            exists
+
+            if (exists) {
+                Log.d(TAG, "[SUCESSO] Consulta de contatos para $masked finalizada com sucesso (encontrado=true via PhoneLookup).")
+                return true
+            }
+
+            // Fallback: busca pelos últimos 8 dígitos na tabela de telefones
+            val digits = phoneNumber.filter { it.isDigit() }
+            if (digits.length >= 8) {
+                val last8 = digits.takeLast(8)
+                val phoneUri = android.provider.ContactsContract.CommonDataKinds.Phone.CONTENT_URI
+                val selection = "${android.provider.ContactsContract.CommonDataKinds.Phone.NUMBER} LIKE ?"
+                val selectionArgs = arrayOf("%$last8%")
+                val foundByDigits = context.contentResolver.query(
+                    phoneUri,
+                    arrayOf(android.provider.ContactsContract.CommonDataKinds.Phone.NUMBER),
+                    selection,
+                    selectionArgs,
+                    null
+                )?.use { cursor ->
+                    cursor.moveToFirst()
+                } ?: false
+
+                if (foundByDigits) {
+                    Log.d(TAG, "[SUCESSO] Consulta de contatos para $masked finalizada com sucesso (encontrado=true via dígitos).")
+                    return true
+                }
+            }
+
+            Log.d(TAG, "[SUCESSO] Consulta de contatos para $masked finalizada com sucesso (encontrado=false).")
+            false
         } catch (e: Exception) {
             Log.e(TAG, "[ERRO] Erro ao consultar provedor de contatos para o número $masked.", e)
             false

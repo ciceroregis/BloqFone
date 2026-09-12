@@ -38,12 +38,17 @@ class PhoneNumberRulesTest {
     fun `telemarketing 0303 is detected`() {
         assertTrue(isBrazilianTelemarketingNumber(parsePhoneNumber("030312345678")))
         assertTrue(isBrazilianTelemarketingNumber(parsePhoneNumber("+55030312345678")))
+        assertTrue(isBrazilianTelemarketingNumber(parsePhoneNumber("+55110303123456")))
+        assertTrue(isBrazilianTelemarketingNumber(parsePhoneNumber("110303123456")))
+        assertTrue(isBrazilianTelemarketingNumber(parsePhoneNumber("55110304123456")))
+        assertTrue(isBrazilianTelemarketingNumber(parsePhoneNumber("030412345678")))
         assertFalse(isBrazilianTelemarketingNumber(parsePhoneNumber("+5511988887777")))
     }
 
     @Test
     fun `robocall heuristic detects repeated digits`() {
         assertTrue(isLikelyRobocall(parsePhoneNumber("+5511111111111")))
+        assertTrue(isLikelyRobocall(parsePhoneNumber("11900000000")))
         assertFalse(isLikelyRobocall(parsePhoneNumber("+5511988887777")))
     }
 
@@ -51,8 +56,25 @@ class PhoneNumberRulesTest {
     fun `spam heuristic detects known suspicious prefixes`() {
         assertTrue(isLikelySpam(parsePhoneNumber("90901234567")))
         assertTrue(isLikelySpam(parsePhoneNumber("30031234567")))
+        assertTrue(isLikelySpam(parsePhoneNumber("+551130031234")))
+        assertTrue(isLikelySpam(parsePhoneNumber("1130031234")))
+        assertTrue(isLikelySpam(parsePhoneNumber("+551140041234")))
+        assertTrue(isLikelySpam(parsePhoneNumber("+551190901234")))
         assertTrue(isLikelySpam(parsePhoneNumber("1199990000")))
+        assertTrue(isLikelySpam(parsePhoneNumber("+5511988887777"), callerDisplayName = "Suspeita de Spam"))
+        assertTrue(isLikelySpam(parsePhoneNumber("+5511988887777"), callerVerificationStatus = 2))
         assertFalse(isLikelySpam(parsePhoneNumber("1199991234")))
+        assertFalse(isLikelySpam(parsePhoneNumber("+5511988887777")))
+    }
+
+    @Test
+    fun `matchesNumberList handles various formats accurately`() {
+        val blacklist = setOf("11988887777", "+552130031234")
+        assertTrue(matchesNumberList(parsePhoneNumber("+5511988887777"), blacklist))
+        assertTrue(matchesNumberList(parsePhoneNumber("11988887777"), blacklist))
+        assertTrue(matchesNumberList(parsePhoneNumber("(11) 98888-7777"), blacklist))
+        assertTrue(matchesNumberList(parsePhoneNumber("2130031234"), blacklist))
+        assertFalse(matchesNumberList(parsePhoneNumber("+5511977776666"), blacklist))
     }
 
     @Test

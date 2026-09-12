@@ -85,6 +85,11 @@
     <string name="toast_role_granted">Proteção ativada! O BloqFone agora filtra suas chamadas.</string>
     <string name="toast_role_denied">Permissão necessária para que o BloqFone possa filtrar chamadas.</string>
     <string name="toast_role_already_set">O BloqFone já está ativo como app de bloqueio padrão.</string>
+    <string name="toast_contacts_granted">Acesso aos contatos concedido! O Modo Foco agora protegerá seus contatos.</string>
+    <string name="toast_contacts_denied">Sem a permissão de contatos, o Modo Foco não saberá quem são seus contatos salvos.</string>
+    <string name="contacts_permission_banner_title">Permissão de Contatos Necessária</string>
+    <string name="contacts_permission_banner_desc">Para que o Modo Foco permita apenas ligações de pessoas conhecidas, conceda acesso à sua agenda telefônica.</string>
+    <string name="contacts_permission_grant_button">Conceder Acesso à Agenda</string>
     <string name="toast_invalid_number">Por favor, digite um número de telefone válido.</string>
     <string name="toast_number_added">Número adicionado com sucesso!</string>
     <string name="toast_number_removed">Número removido.</string>

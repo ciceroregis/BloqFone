@@ -11,6 +11,7 @@ class CallBlockEvaluatorTest {
 
     private fun defaultSnapshot(
         isFocusModeEnabled: Boolean = false,
+        hasContactsPermission: Boolean = true,
         shouldBlockUnknownNumbers: Boolean = false,
         shouldBlockPrivateNumbers: Boolean = false,
         shouldBlockNoCallerId: Boolean = false,
@@ -24,6 +25,7 @@ class CallBlockEvaluatorTest {
         blockedDdds: Set<String> = emptySet()
     ) = BlockingSnapshot(
         isFocusModeEnabled = isFocusModeEnabled,
+        hasContactsPermission = hasContactsPermission,
         shouldBlockUnknownNumbers = shouldBlockUnknownNumbers,
         shouldBlockPrivateNumbers = shouldBlockPrivateNumbers,
         shouldBlockNoCallerId = shouldBlockNoCallerId,
@@ -101,9 +103,70 @@ class CallBlockEvaluatorTest {
             rawIncomingNumber = "+5511988887777",
             handlePresentation = HANDLE_PRESENTATION_ALLOWED,
             isInContacts = false,
-            snapshot = defaultSnapshot(isFocusModeEnabled = true)
+            snapshot = defaultSnapshot(isFocusModeEnabled = true, hasContactsPermission = true)
         )
         assertEquals("modo foco", reason)
+    }
+
+    @Test
+    fun `focus mode does not block when contacts permission is not granted`() {
+        val reason = CallBlockEvaluator.evaluateBlockReason(
+            rawIncomingNumber = "+5511988887777",
+            handlePresentation = HANDLE_PRESENTATION_ALLOWED,
+            isInContacts = false,
+            snapshot = defaultSnapshot(isFocusModeEnabled = true, hasContactsPermission = false)
+        )
+        assertNull(reason)
+    }
+
+    @Test
+    fun `telemarketing with ddd and 0304 are blocked`() {
+        val call0303WithDdd = CallBlockEvaluator.evaluateBlockReason(
+            rawIncomingNumber = "+55110303123456",
+            handlePresentation = HANDLE_PRESENTATION_ALLOWED,
+            isInContacts = true,
+            snapshot = defaultSnapshot(shouldBlockTelemarketing = true)
+        )
+        assertEquals("telemarketing", call0303WithDdd)
+
+        val call0304 = CallBlockEvaluator.evaluateBlockReason(
+            rawIncomingNumber = "55110304123456",
+            handlePresentation = HANDLE_PRESENTATION_ALLOWED,
+            isInContacts = true,
+            snapshot = defaultSnapshot(shouldBlockTelemarketing = true)
+        )
+        assertEquals("telemarketing", call0304)
+    }
+
+    @Test
+    fun `spam with ddd and caller display name are blocked`() {
+        val spamWithDdd = CallBlockEvaluator.evaluateBlockReason(
+            rawIncomingNumber = "+551130031234",
+            handlePresentation = HANDLE_PRESENTATION_ALLOWED,
+            isInContacts = true,
+            snapshot = defaultSnapshot(shouldBlockSpam = true)
+        )
+        assertEquals("spam", spamWithDdd)
+
+        val spamByName = CallBlockEvaluator.evaluateBlockReason(
+            rawIncomingNumber = "+5511988887777",
+            handlePresentation = HANDLE_PRESENTATION_ALLOWED,
+            isInContacts = false,
+            snapshot = defaultSnapshot(shouldBlockSpam = true),
+            callerDisplayName = "Suspeita de Spam"
+        )
+        assertEquals("spam", spamByName)
+    }
+
+    @Test
+    fun `blacklist matches numbers saved without country code or with mask`() {
+        val reason = CallBlockEvaluator.evaluateBlockReason(
+            rawIncomingNumber = "+5511988887777",
+            handlePresentation = HANDLE_PRESENTATION_ALLOWED,
+            isInContacts = false,
+            snapshot = defaultSnapshot(blacklistNumbers = setOf("11988887777"))
+        )
+        assertEquals("lista negra", reason)
     }
 
     @Test
