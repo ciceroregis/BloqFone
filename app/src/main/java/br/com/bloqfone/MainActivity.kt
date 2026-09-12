@@ -43,6 +43,19 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private val contactsPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        viewModel.updateContactsPermission(isGranted)
+        if (isGranted) {
+            Log.i(TAG, "[SUCESSO] Permissão READ_CONTACTS concedida pelo usuário.")
+            viewModel.showFeedback(getString(R.string.toast_contacts_granted), br.com.bloqfone.ui.FeedbackType.SUCCESS)
+        } else {
+            Log.w(TAG, "[AVISO] Permissão READ_CONTACTS negada pelo usuário.")
+            viewModel.showFeedback(getString(R.string.toast_contacts_denied), br.com.bloqfone.ui.FeedbackType.WARNING)
+        }
+    }
+
     private val roleRequestLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -68,6 +81,7 @@ class MainActivity : ComponentActivity() {
         Log.i(TAG, "[SUCESSO] MainActivity inicializada com sucesso.")
         NotificationHelper.createNotificationChannel(this)
         checkAndRequestNotificationPermission()
+        checkAndRequestContactsPermission()
         handleNotificationIntent(intent)
 
         setContent {
@@ -78,7 +92,8 @@ class MainActivity : ComponentActivity() {
                 ) {
                     AppScreen(
                         viewModel = viewModel,
-                        onRequestRole = { requestCallScreeningRole() }
+                        onRequestRole = { requestCallScreeningRole() },
+                        onRequestContactsPermission = { contactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS) }
                     )
                 }
             }
@@ -106,16 +121,29 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun checkAndRequestContactsPermission() {
+        val status = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS)
+        val isGranted = status == PackageManager.PERMISSION_GRANTED
+        viewModel.updateContactsPermission(isGranted)
+        if (!isGranted) {
+            contactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         try {
             val roleManager = getSystemService(Context.ROLE_SERVICE) as RoleManager
             val isHeld = roleManager.isRoleHeld(RoleManager.ROLE_CALL_SCREENING)
             viewModel.updateRoleStatus(isHeld)
+
+            val contactsStatus = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS)
+            viewModel.updateContactsPermission(contactsStatus == PackageManager.PERMISSION_GRANTED)
+
             viewModel.refreshSettings()
-            Log.d(TAG, "[RASTREAMENTO] MainActivity retomada. Status da Role ROLE_CALL_SCREENING: isHeld=$isHeld.")
+            Log.d(TAG, "[RASTREAMENTO] MainActivity retomada. Role isHeld=$isHeld, contactsGranted=${contactsStatus == PackageManager.PERMISSION_GRANTED}.")
         } catch (e: Exception) {
-            Log.e(TAG, "[ERRO] Falha ao consultar status da ROLE_CALL_SCREENING em onResume.", e)
+            Log.e(TAG, "[ERRO] Falha ao consultar status em onResume.", e)
         }
     }
 

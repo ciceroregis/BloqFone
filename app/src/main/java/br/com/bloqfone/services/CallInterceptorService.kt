@@ -1,8 +1,12 @@
 package br.com.bloqfone.services
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.telecom.Call
 import android.telecom.CallScreeningService
 import android.util.Log
+import androidx.core.content.ContextCompat
 import br.com.bloqfone.data.BlockedCallsRepository
 import br.com.bloqfone.data.ConfigRepository
 import br.com.bloqfone.data.ContactsRepository
@@ -50,14 +54,32 @@ class CallInterceptorService : CallScreeningService() {
 
         try {
             val parsedNumber = parsePhoneNumber(rawIncomingNumber)
-            val isInContacts = contactsRepository.doesNumberExistInContacts(parsedNumber.normalized)
-            Log.d(TAG, "[RASTREAMENTO] Verificação de contato para $maskedNumber: estáNosContatos=$isInContacts")
+            val hasContactsPermission = ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.READ_CONTACTS
+            ) == PackageManager.PERMISSION_GRANTED
+
+            val isInContacts = if (hasContactsPermission) {
+                contactsRepository.doesNumberExistInContacts(parsedNumber.normalized)
+            } else {
+                false
+            }
+            Log.d(TAG, "[RASTREAMENTO] Verificação de contato para $maskedNumber: estáNosContatos=$isInContacts (permissãoContatos=$hasContactsPermission)")
+
+            val callerDisplayName = callDetails.callerDisplayName ?: callDetails.contactDisplayName
+            val callerVerificationStatus = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                callDetails.callerNumberVerificationStatus
+            } else {
+                0
+            }
 
             val blockReason = CallBlockEvaluator.evaluateBlockReason(
                 rawIncomingNumber = rawIncomingNumber,
                 handlePresentation = callDetails.handlePresentation,
                 isInContacts = isInContacts,
-                snapshot = currentSnapshot()
+                snapshot = currentSnapshot(hasContactsPermission),
+                callerDisplayName = callerDisplayName,
+                callerVerificationStatus = callerVerificationStatus
             )
 
             val responseBuilder = CallResponse.Builder()
@@ -75,7 +97,7 @@ class CallInterceptorService : CallScreeningService() {
                 )
                 Log.i(
                     TAG,
-                    "[SUCESSO] Chamada BLOQUEADA para $maskedNumber. Motivo: $blockReason. Ação aplicada: autoReject=${configRepository.shouldAutoReject}."
+                    "[SUCESSO] Chamada BLOQUEADA para $maskedNumber. Motivo: $blockReason. Ação aplicada: autoReject=${configRepository.shouldAutoReject}, silenciada=true, skipNotification=true."
                 )
             } else {
                 responseBuilder
@@ -112,14 +134,15 @@ class CallInterceptorService : CallScreeningService() {
         builder
             .setDisallowCall(true)
             .setRejectCall(autoReject)
-            .setSilenceCall(!autoReject)
+            .setSilenceCall(true)
             .setSkipCallLog(false)
-            .setSkipNotification(false)
+            .setSkipNotification(true)
     }
 
-    private fun currentSnapshot(): BlockingSnapshot {
+    private fun currentSnapshot(hasContactsPermission: Boolean): BlockingSnapshot {
         return BlockingSnapshot(
             isFocusModeEnabled = configRepository.isFocusModeEnabled,
+            hasContactsPermission = hasContactsPermission,
             shouldBlockUnknownNumbers = configRepository.shouldBlockUnknownNumbers,
             shouldBlockPrivateNumbers = configRepository.shouldBlockPrivateNumbers,
             shouldBlockNoCallerId = configRepository.shouldBlockNoCallerId,
